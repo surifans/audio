@@ -23,19 +23,17 @@
                 var sub = 'sub-b8f4c07a-352e-11e2-bb9d-c7df1d04ae4a';
 
                 WebSocket  = PUBNUB.ws;
-
                 var websocket = new WebSocket('wss://pubsub.pubnub.com/' + pub + '/' + sub + '/' + channel);
-				
                 websocket.push = websocket.send;
                 websocket.send = function(data) {
-					//
                     websocket.push(JSON.stringify(data));
                 };
-				
 				//alert(111);
 				
-				
                 var peer = new PeerConnection(websocket,11);//在老师的远端建立的userid为11
+				
+				
+				
 				
 				//alert(peer);
                 peer.onUserFound = function(userid) 
@@ -58,28 +56,16 @@
                 peer.onStreamAdded = function(e) 
 				{
                     
-                    var video = e.mediaElement;
+                    var audio = e.mediaElement;
 					//alert(video.id);
 					
+                    if (document.getElementById(audio.id)) 
+					{
+						var video = document.getElementById(video.id);
+						if (video) video.parentNode.removeChild(video);
+					}
                     
-                    video.setAttribute('controls', true);
-					video.play();
-                    remot.insertBefore(video, remot.firstChild);
-                    
-                    //scaleVideos();
-					//alert(111);
-                };
-
-                peer.onStreamEnded = function(e) {
-                    var video = e.mediaElement;
-                    if (video) {
-                        video.style.opacity = 0;
-                        
-                        setTimeout(function() {
-                            video.parentNode.removeChild(video);
-                            //scaleVideos();
-                        }, 1000);
-                    }
+                    remot.appendChild(audio);
                 };
 
                 
@@ -93,7 +79,7 @@
                     };
                     navigator.getUserMedia(hints, function(stream) {
 						callback(stream);
-                        var video = document.createElement('video');
+                        var video = document.createElement('audio');
                         video.src = URL.createObjectURL(stream);
                         video.controls = true;
                         video.muted = true;

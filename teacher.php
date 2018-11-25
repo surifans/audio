@@ -25,6 +25,7 @@
 
                 WebSocket  = PUBNUB.ws;
                 var websocket = new WebSocket('wss://pubsub.pubnub.com/' + pub + '/' + sub + '/' + channel);	
+				
                 websocket.push = websocket.send;
                 websocket.send = function(data) {
                     websocket.push(JSON.stringify(data));
@@ -34,7 +35,7 @@
                
                 getUserMedia(function(stream) { //打开并创建本地audio
 					peer.addStream(stream);
-					peer.startBroadcasting();
+					peer.startBroadcasting();//开始播放
 				});
                 function getUserMedia(callback) 
 				{
@@ -45,7 +46,7 @@
                     navigator.getUserMedia(hints, function(stream) 
 					{
 						callback(stream);
-                        var video = document.createElement('video');
+                        var video = document.createElement('audio');
                         video.src = URL.createObjectURL(stream);
                         video.controls = true;
                         video.muted = true;
@@ -65,36 +66,23 @@
                 peer.onStreamAdded = function(e) //这里是创建远端连接 
 				{
                     
-                    var video = e.mediaElement;
-					//alert(video.id);
+                    var audio = e.mediaElement;
 					
-					
-					if (document.getElementById(video.id)) 
+					if (document.getElementById(audio.id)) 
 					{
-						return;
+						//alert(222);
+						//peer.onStreamEnded(e);
+						//video.parentNode.removeChild(video);
+						
+						var video = document.getElementById(video.id);
+						if (video) video.parentNode.removeChild(video);
 					}
 					
-                    remot.insertBefore(video, remot.firstChild);
-					//remot.appendChild(video);
+						remot.appendChild(audio);
 					
                 };
 
-                peer.onStreamEnded = function(e) 
-				{
-                    var video = e.mediaElement;
-                    if (video) {
-                        
-                        setTimeout(function() {
-                            video.parentNode.removeChild(video);
-                            //scaleVideos();
-                        }, 1000);
-                    }
-                };
-
-				
-				
-				
-				
+                
 
                 
             </script>
