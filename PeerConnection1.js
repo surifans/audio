@@ -51,9 +51,11 @@
         this.onice = function (message) // if someone shared ICE
 		{
             var peer = root.peers[message.userid];
-            if (peer) {
+            if (peer) 
+			{
                 peer.addIceCandidate(message.candidate);
-                for (var i = 0; i < candidates.length; i++) {
+                for (var i = 0; i < candidates.length; i++) 
+				{
                     peer.addIceCandidate(candidates[i]);
                 }
                 candidates = [];
@@ -143,6 +145,33 @@
 		var socket = socketURL;
 		
 		socket.onmessage = onmessage;//接受消息
+		
+		function closePeerConnections() {
+            //self.stopBroadcasting = true;
+            if (root.MediaStream) root.MediaStream.stop();
+
+            for (var userid in root.peers) {
+                root.peers[userid].peer.close();
+            }
+            root.peers = {};
+        }
+
+        root.close = function () {
+            socket.send({
+                userLeft: true,
+                userid: root.userid,
+                to: root.participant
+            });
+            closePeerConnections();
+        };
+
+        window.onbeforeunload = function () {
+			//alert(111);
+            root.close();
+        };
+		
+		
+		
     }
 
     var RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;

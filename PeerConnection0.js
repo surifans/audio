@@ -48,6 +48,18 @@
 				root.acceptRequest(message.userid);
             }
 			
+			if (message.userLeft && message.to == root.userid) 
+			{
+                var video = document.getElementById(message.userid);
+				if (video) video.parentNode.removeChild(video);
+				//closePeerConnections();
+				alert(message.userid);
+				
+				root.peers[message.userid].peer.close();
+				root.peers[message.userid] = {};
+				
+				
+            }
             
 		}
 		
@@ -79,7 +91,7 @@
             var sdp = message.sdp;
             if (sdp.type == 'answer') 
 			{
-				//alert(222);
+				//alert(111);
                 root.peers[message.userid].setRemoteDescription(sdp);
             }
         };
@@ -164,7 +176,18 @@
             }
         };
 
-        
+        function closePeerConnections() 
+		{
+            //self.stopBroadcasting = true;
+            alert(111);
+			
+			if (root.MediaStream) root.MediaStream.stop();
+
+            for (var userid in root.peers) {
+                root.peers[userid].peer.close();
+            }
+            root.peers = {};
+        }
 		
 		
 		
