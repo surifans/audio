@@ -86,7 +86,7 @@
 
         root.acceptRequest = function (userid) //接受加入请求
 		{
-			alert(userid);
+			//alert(userid);
             root.peers[userid] = Offer.createOffer(merge(options, 
 			{
                 MediaStream: root.MediaStream

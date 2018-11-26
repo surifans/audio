@@ -75,7 +75,10 @@
 				{
                     var hints = {
                         audio: true,
-                        video: false
+                        video: {
+                            optional: [],
+                            mandatory: {}
+                        }
                     };
                     navigator.getUserMedia(hints, function(stream) {
 						callback(stream);

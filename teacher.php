@@ -41,7 +41,10 @@
 				{
                     var hints = {
                         audio: true,
-						video: false
+						video: {
+                            optional: [],
+                            mandatory: {}
+                        }
                     };
                     navigator.getUserMedia(hints, function(stream) 
 					{
@@ -78,7 +81,7 @@
 						if (video) video.parentNode.removeChild(video);
 					}
 					
-						remot.appendChild(audio);
+					remot.appendChild(audio);
 					
                 };
 
