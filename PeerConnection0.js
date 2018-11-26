@@ -23,12 +23,14 @@
 		socket.onmessage = onmessage;//接受消息
 		function onmessage(e) 
 		{
-			//alert(111);
+			//
 			var message = JSON.parse(e.data);
 
             if (message.userid == root.userid) return;
             root.participant = message.userid;
-
+			
+			//alert(root.participant);
+			
             if (message.sdp && message.to == root.userid) // if someone shared SDP
 			{
 				//alert(111);
@@ -43,20 +45,21 @@
             //alert(message.to);
             if (message.participationRequest && message.to == root.userid) // if someone sent participation request
 			{
-				//alert(111);
-                self.participantFound = true;
-				root.acceptRequest(message.userid);
+				
+				root.peers[message.userid] = Offer.createOffer(merge(options, 
+				{
+					MediaStream: root.MediaStream
+				}));
             }
 			
 			if (message.userLeft && message.to == root.userid) 
 			{
                 var video = document.getElementById(message.userid);
 				if (video) video.parentNode.removeChild(video);
-				//closePeerConnections();
-				alert(message.userid);
+				//alert(message.userid);
 				
 				root.peers[message.userid].peer.close();
-				root.peers[message.userid] = {};
+				//root.peers[message.userid] = {};
 				
 				
             }
@@ -96,14 +99,7 @@
             }
         };
 
-        root.acceptRequest = function (userid) //接受加入请求
-		{
-			//alert(userid);
-            root.peers[userid] = Offer.createOffer(merge(options, 
-			{
-                MediaStream: root.MediaStream
-            }));
-        };
+        
 
         var candidates = [];
         
@@ -128,14 +124,14 @@
                 socket.send({
                     userid: root.userid,
                     sdp: sdp,
-                    to: root.participant
+                    //to: root.participant
                 });
             },
             onicecandidate: function (candidate) {
                 socket.send({
                     userid: root.userid,
                     candidate: candidate,
-                    to: root.participant
+                    //to: root.participant
                 });
             },
             onStreamAdded: function (stream) 
@@ -159,7 +155,8 @@
                 mediaElement.autoplay = true;
                 mediaElement.controls = true;
 				mediaElement.srcObject = stream;
-                mediaElement.play();
+				
+                mediaElement.pause();
 				
                 var streamObject = {
                     mediaElement: mediaElement,
@@ -176,19 +173,29 @@
             }
         };
 
-        function closePeerConnections() 
-		{
+        function closePeerConnections() {
             //self.stopBroadcasting = true;
-            alert(111);
-			
-			if (root.MediaStream) root.MediaStream.stop();
+            if (root.MediaStream) root.MediaStream.stop();
 
             for (var userid in root.peers) {
                 root.peers[userid].peer.close();
             }
             root.peers = {};
         }
-		
+
+        root.close = function () {
+            socket.send({
+                userLeft: true,
+                userid: root.userid,
+                //to: root.participant
+            });
+            closePeerConnections();
+        };
+
+        window.onbeforeunload = function () {
+			//alert(111);
+            root.close();
+        };
 		
 		
 		

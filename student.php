@@ -30,7 +30,7 @@
                 };
 				//alert(111);
 				
-                var peer = new PeerConnection(websocket,11);//在老师的远端建立的userid为11
+                var peer = new PeerConnection(websocket,"s_11");//在老师的远端建立的userid为11
 				window.onbeforeunload();
 				
 				
@@ -38,34 +38,37 @@
 				//alert(peer);
                 peer.onUserFound = function(userid) 
 				{
-					
-					//alert(11);
-					//alert(userid);
-                    if (document.getElementById(userid)) return;
-					
-					
-					getUserMedia(function(stream) {
-						peer.addStream(stream);
-						peer.sendParticipationRequest(userid);
-					});
-					
+					if(userid==channel)
+					{
+						if (document.getElementById(userid)) return;
+						
+						getUserMedia(function(stream) {
+							peer.addStream(stream);
+							peer.sendParticipationRequest(userid);
+						});
+						
+					}
+                    
                 };
 				
 				
 				//alert(111);
                 peer.onStreamAdded = function(e) 
 				{
-                    
+                   
                     var audio = e.mediaElement;
-					//alert(video.id);
-					
-                    if (document.getElementById(audio.id)) 
+					//alert(audio.id);
+					if(audio.id==channel)
 					{
-						var video = document.getElementById(video.id);
-						if (video) video.parentNode.removeChild(video);
+						if (document.getElementById(audio.id)) 
+						{
+							var video = document.getElementById(video.id);
+							if (video) video.parentNode.removeChild(video);
+						}
+						remot.appendChild(audio);
+					 
 					}
                     
-                    remot.appendChild(audio);
                 };
 
                 

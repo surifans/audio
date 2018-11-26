@@ -118,27 +118,37 @@
             if (message.userid == root.userid) return;
             root.participant = message.userid;
 
-            
+            //alert(message.to);
 
             
-            if (message.sdp && message.to == root.userid) // if someone shared SDP
+            if (message.sdp) // if someone shared SDP
 			{
                 self.onsdp(message);
             }
 			
-            if (message.candidate && message.to == root.userid) // if someone shared ICE
+            if (message.candidate) // if someone shared ICE
 			{
                 self.onice(message);
             }
 
-            
-			
-			
             if (message.broadcasting && root.onUserFound) 
 			{
+				//alert(123);
                 root.onUserFound(message.userid);
             }
-
+			
+			if (message.userLeft) 
+			{
+                var video = document.getElementById(message.userid);
+				if (video) video.parentNode.removeChild(video);
+				//closePeerConnections();
+				//alert(message.userid);
+				
+				root.peers[message.userid].peer.close();
+				root.peers[message.userid] = {};
+				
+				
+            }
             
 		}
 		
@@ -146,7 +156,8 @@
 		
 		socket.onmessage = onmessage;//接受消息
 		
-		function closePeerConnections() {
+		function closePeerConnections() 
+		{
             //self.stopBroadcasting = true;
             if (root.MediaStream) root.MediaStream.stop();
 
@@ -162,7 +173,7 @@
                 userid: root.userid,
                 to: root.participant
             });
-            closePeerConnections();
+            //closePeerConnections();
         };
 
         window.onbeforeunload = function () {

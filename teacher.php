@@ -32,7 +32,9 @@
                 };
 
                 var peer = new PeerConnection(websocket,channel);
-               
+				window.onbeforeunload();
+			   
+			   
                 getUserMedia(function(stream) { //打开并创建本地audio
 					peer.addStream(stream);
 					peer.startBroadcasting();//开始播放
