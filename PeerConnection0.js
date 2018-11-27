@@ -21,13 +21,17 @@
         var self = this;
 		var socket = socketURL;
 		socket.onmessage = onmessage;//接受消息
+		
+		
 		function onmessage(e) 
 		{
-			//
+			
 			var message = JSON.parse(e.data);
-
+			
+			//alert(message.userid);
+			
             if (message.userid == root.userid) return;
-            root.participant = message.userid;
+            
 			
 			//alert(root.participant);
 			
@@ -39,13 +43,27 @@
 			
             if (message.candidate && message.to == root.userid) // if someone shared ICE
 			{
-                self.onice(message);
+                
+				var peer = root.peers[message.userid];
+				if (peer) 
+				{
+					//alert(message.userid);
+					peer.addIceCandidate(message.candidate);
+					//for (var i = 0; i < candidates.length; i++) 
+					//{
+					//	peer.addIceCandidate(candidates[i]);
+					//}
+					//candidates = [];
+					
+					//peer.addIceCandidate(candidates[i]);
+				} 
+				//else candidates.push(candidates);
             }
 			
             //alert(message.to);
             if (message.participationRequest && message.to == root.userid) // if someone sent participation request
 			{
-				
+				root.participant = message.userid;
 				root.peers[message.userid] = Offer.createOffer(merge(options, 
 				{
 					MediaStream: root.MediaStream
@@ -102,21 +120,6 @@
         
 
         var candidates = [];
-        
-        this.onice = function (message) // if someone shared ICE
-		{
-			
-            var peer = root.peers[message.userid];
-            if (peer) {
-                peer.addIceCandidate(message.candidate);
-                for (var i = 0; i < candidates.length; i++) {
-                    peer.addIceCandidate(candidates[i]);
-                }
-                candidates = [];
-            } else candidates.push(candidates);
-        };
-
-        
         var options = // it is passed over Offer/Answer objects for reusability
 		{
             onsdp: function (sdp) 

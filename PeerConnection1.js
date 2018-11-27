@@ -7,6 +7,7 @@
     window.PeerConnection = function (socketURL, userid) {
         this.userid = userid ;
         this.peers = {};
+		this.participant;
 		
         new Signaler(this, socketURL);
 		
@@ -115,7 +116,7 @@
 			//alert(111);
 			var message = JSON.parse(e.data);
 
-            if (message.userid == root.userid) return;
+            if (message.userid == root.userid) return;//root.userid为学生id
             root.participant = message.userid;
 
             //alert(message.to);
@@ -170,8 +171,8 @@
         root.close = function () {
             socket.send({
                 userLeft: true,
-                userid: root.userid,
-                to: root.participant
+                userid: root.userid,  //当前学生id
+                to: root.participant	//应该为要对话的老师的id
             });
             //closePeerConnections();
         };

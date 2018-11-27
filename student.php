@@ -32,7 +32,7 @@
 				
                 var peer = new PeerConnection(websocket,"s_11");//在老师的远端建立的userid为11
 				window.onbeforeunload();
-				
+				//peer.participant=channel;
 				
 				
 				//alert(peer);
