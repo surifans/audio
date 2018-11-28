@@ -4,7 +4,9 @@
 
 (function () {
 	
-    window.PeerConnection = function (channel, userid,local,remot) {
+    window.PeerConnection = function (channel, userid,local,remot) 
+	{
+		
         this.userid = userid ;
         this.peers = {};
 		this.participant = channel;
@@ -19,7 +21,6 @@
 		};
 		
 		
-		
 		var socket = websocket;
 		
         new Signaler(this, socket);
@@ -31,38 +32,12 @@
 		this.getUserMedia = function(callback) 
 		{
 			
-			/*var hints = {
-				audio: true,
-				video: {
-					optional: [],
-					mandatory: {}
-				}
-			};
-			
-			navigator.getUserMedia(hints, function(stream) 
-			{
-				var video = document.createElement('audio');
-				//video.src = URL.createObjectURL(stream);
-				video.srcObject = stream;
-				video.controls = true;
-				video.muted = true;
-				video.id = 'self';
-				video.play();
-				video.autoplay = true;
-				//alert(222);
-				
-				if (document.getElementById(video.id)) 
-				{
-					
-				}else{
-					local.appendChild(video);
-				}
-				callback(stream);
-				
-			});*/
 			var constraints = {
 					audio: true,
-					video: false
+					video: {
+                            optional: [],
+                            mandatory: {}
+                        }
 				};
 
             navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
@@ -124,17 +99,22 @@
 			
 		};
 		
-		this.sendParticipationRequest = function (userid) 
+		
+		this.onUserFound = function(userid) 
 		{
-			//alert(userid);
-            socket.send({
-                participationRequest: true,
-                userid: this.userid,
-                to: userid
-            });
-        };
-		
-		
+			
+			if(userid==channel)
+			{
+				
+				if (document.getElementById(userid)) return;
+				socket.send({
+					participationRequest: true,
+					userid: this.userid,
+					to: channel
+				});
+			}
+			
+		};
 		
     };
 
@@ -340,7 +320,7 @@
     var Answer = {
         createAnswer: function (config) 
 		{
-			alert(333);
+			//alert(333);
             var peer = new RTCPeerConnection(iceServers, optionalArgument);
 			
             if (config.MediaStream) peer.addStream(config.MediaStream);
