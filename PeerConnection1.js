@@ -22,6 +22,12 @@
 		
 		
 		var socket = websocket;
+		socket.send({         //初始化
+			userLeft: true,
+			userid: this.userid,  //当前学生id
+			to: channel	//应该为要对话的老师的id
+		});
+		
 		
         new Signaler(this, socket);
 		
@@ -107,6 +113,8 @@
 			{
 				
 				if (document.getElementById(userid)) return;
+				
+				
 				socket.send({
 					participationRequest: true,
 					userid: this.userid,
@@ -210,26 +218,42 @@
             },
             onStreamAdded: function (stream) 
 			{
-                
+				
                 var mediaElement = document.createElement('audio');
                 mediaElement.id = root.participant;
-                mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.webkitURL.createObjectURL(stream);
-                mediaElement.autoplay = true;
+                var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
+				if (agent.indexOf("safari") > 0 && agent.indexOf("chrome") < 0) 
+				{
+					//audio['src'] = window.URL.createObjectURL(stream);
+				}
+				else{
+					audio[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
+				}
+				
+				mediaElement.autoplay = true;
                 mediaElement.controls = true;
                 mediaElement.play();
-
+				
+				//alert(111);
+				mediaElement.srcObject = stream;
+				
                 var streamObject = {
                     mediaElement: mediaElement,
                     stream: stream,
                     userid: root.participant,
                     type: 'remote'
                 };
-
+				
                 if (root.onStreamAdded)
 				{
-					//alert(111);
+					
 					root.onStreamAdded(streamObject);
 				}
+				
+				/*var video = document.getElementById(mediaElement.id);
+				if (video) video.parentNode.removeChild(video);
+				
+				remot.appendChild(mediaElement);*/
                     
             }
         };
@@ -262,6 +286,62 @@
 		
     }
 
+	
+	var IceServersHandler = (function() 
+	{
+        function getIceServers(connection) {
+            var iceServers = [];
+
+            iceServers.push(getSTUNObj('stun:stun.l.google.com:19302'));
+
+            iceServers.push(getTURNObj('stun:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
+            iceServers.push(getTURNObj('turn:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
+            iceServers.push(getTURNObj('turn:webrtcweb.com:8877', 'muazkh', 'muazkh')); // coTURN
+
+            iceServers.push(getTURNObj('turns:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
+            iceServers.push(getTURNObj('turns:webrtcweb.com:8877', 'muazkh', 'muazkh')); // coTURN
+
+            // iceServers.push(getTURNObj('turn:webrtcweb.com:3344', 'muazkh', 'muazkh')); // resiprocate
+            // iceServers.push(getTURNObj('turn:webrtcweb.com:4433', 'muazkh', 'muazkh')); // resiprocate
+
+            // check if restund is still active: http://webrtcweb.com:4050/
+            iceServers.push(getTURNObj('stun:webrtcweb.com:4455', 'muazkh', 'muazkh')); // restund
+            iceServers.push(getTURNObj('turn:webrtcweb.com:4455', 'muazkh', 'muazkh')); // restund
+            iceServers.push(getTURNObj('turn:webrtcweb.com:5544?transport=tcp', 'muazkh', 'muazkh')); // restund
+
+            return iceServers;
+        }
+
+        function getSTUNObj(stunStr) {
+            var urlsParam = 'urls';
+            if (typeof isPluginRTC !== 'undefined') {
+                urlsParam = 'url';
+            }
+
+            var obj = {};
+            obj[urlsParam] = stunStr;
+            return obj;
+        }
+
+        function getTURNObj(turnStr, username, credential) {
+            var urlsParam = 'urls';
+            if (typeof isPluginRTC !== 'undefined') {
+                urlsParam = 'url';
+            }
+
+            var obj = {
+                username: username,
+                credential: credential
+            };
+            obj[urlsParam] = turnStr;
+            return obj;
+        }
+
+        return {
+            getIceServers: getIceServers
+        };
+    })();
+	
     var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;//定义RTCPeerConnection类
     var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
     var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate;
@@ -282,7 +362,8 @@
     };
 
     var iceServers = {
-        iceServers: [STUN]
+        //iceServers: [STUN]
+		iceServers: IceServersHandler.getIceServers()
     };
 
     if (isChrome) {
@@ -320,13 +401,13 @@
     var Answer = {
         createAnswer: function (config) 
 		{
-			//alert(333);
+			
             var peer = new RTCPeerConnection(iceServers, optionalArgument);
 			
             if (config.MediaStream) peer.addStream(config.MediaStream);
             peer.onaddstream = function (event) 
 			{
-				
+				//alert(333);
                 config.onStreamAdded(event.stream);
             };
 
