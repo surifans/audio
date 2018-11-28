@@ -20,7 +20,6 @@
 		
 		
 		
-		
 		var socket = websocket;
 		
         new Signaler(this, socket);
@@ -32,19 +31,19 @@
 		this.getUserMedia = function(callback) 
 		{
 			
-			var hints = {
+			/*var hints = {
 				audio: true,
 				video: {
 					optional: [],
 					mandatory: {}
 				}
 			};
+			
 			navigator.getUserMedia(hints, function(stream) 
 			{
-				//alert(local);
-				//
 				var video = document.createElement('audio');
-				video.src = URL.createObjectURL(stream);
+				//video.src = URL.createObjectURL(stream);
+				video.srcObject = stream;
 				video.controls = true;
 				video.muted = true;
 				video.id = 'self';
@@ -59,7 +58,52 @@
 					local.appendChild(video);
 				}
 				callback(stream);
-			});
+				
+			});*/
+			var constraints = {
+					audio: true,
+					video: false
+				};
+
+            navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
+
+            function onstream(stream) 
+			{
+                //alert(111);
+                var video = document.createElement('audio');
+                video.id = 'self';
+                video.muted = true;
+                video.volume = 0;
+                
+                try {
+                        video.setAttributeNode(document.createAttribute('autoplay'));
+                        video.setAttributeNode(document.createAttribute('playsinline'));
+                        video.setAttributeNode(document.createAttribute('controls'));
+                    } catch (e) {
+                        video.setAttribute('autoplay', true);
+                        video.setAttribute('playsinline', true);
+                        video.setAttribute('controls', true);
+                    }
+
+                video.srcObject = stream;
+				this.MediaStream = stream;
+				
+                if (document.getElementById(video.id)) 
+				{
+					
+				}else{
+					local.appendChild(video);
+				}
+
+                callback(stream);
+            }
+
+            function onerror(e) {
+                console.error(e);
+            }
+			
+			
+			//alert(111);
 		}
 		
 		this.onStreamAdded = function(e) 
@@ -238,12 +282,12 @@
 		
     }
 
-    var RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-    var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
-    var RTCIceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
+    var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;//定义RTCPeerConnection类
+    var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
+    var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate;
 
-    navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
-    window.URL = window.webkitURL || window.URL;
+    navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+    window.URL = window.URL || window.webkitURL;
 
     var isFirefox = !!navigator.mozGetUserMedia;
     var isChrome = !!navigator.webkitGetUserMedia;
@@ -296,9 +340,9 @@
     var Answer = {
         createAnswer: function (config) 
 		{
-			//alert(333);
+			alert(333);
             var peer = new RTCPeerConnection(iceServers, optionalArgument);
-
+			
             if (config.MediaStream) peer.addStream(config.MediaStream);
             peer.onaddstream = function (event) 
 			{
@@ -336,22 +380,6 @@
         return mergein;
     }
 	
-	window.URL = window.webkitURL || window.URL;
-	navigator.getMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-	navigator.getUserMedia = function(hints, onsuccess, onfailure) {
-		if(!hints) hints = {audio:true,video:true};
-		if(!onsuccess) throw 'Second argument is mandatory. navigator.getUserMedia(hints,onsuccess,onfailure)';
-		
-		navigator.getMedia(hints, _onsuccess, _onfailure);
-		
-		function _onsuccess(stream) {
-			onsuccess(stream);
-		}
-		
-		function _onfailure(e) {
-			if(onfailure) onfailure(e);
-			else throw Error('getUserMedia failed: ' + JSON.stringify(e, null, '\t'));
-		}
-	};
+	
 	
 })();
