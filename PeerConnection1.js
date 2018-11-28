@@ -4,66 +4,169 @@
 
 (function () {
 	
-    window.PeerConnection = function (socketURL, userid) {
+    window.PeerConnection = function (channel, userid,local,remot) {
         this.userid = userid ;
         this.peers = {};
+		this.participant = channel;
 		
-        new Signaler(this, socketURL);
+		var pub = 'pub-f986077a-73bd-4c28-8e50-2e44076a84e0';
+		var sub = 'sub-b8f4c07a-352e-11e2-bb9d-c7df1d04ae4a';
+		WebSocket  = PUBNUB.ws;
+		var websocket = new WebSocket('wss://pubsub.pubnub.com/' + pub + '/' + sub + '/' + channel);
+		websocket.push = websocket.send;
+		websocket.send = function(data) {
+			websocket.push(JSON.stringify(data));
+		};
+		
+		
+		
+		
+		var socket = websocket;
+		
+        new Signaler(this, socket);
 		
 		this.addStream = function(stream) {	
 			this.MediaStream = stream;
 		};
-    };
-
-    function Signaler(root, socketURL) 
-	{
-        var self = this;
-
-        root.sendParticipationRequest = function (userid) 
+		
+		this.getUserMedia = function(callback) 
+		{
+			
+			var hints = {
+				audio: true,
+				video: {
+					optional: [],
+					mandatory: {}
+				}
+			};
+			navigator.getUserMedia(hints, function(stream) 
+			{
+				//alert(local);
+				//
+				var video = document.createElement('audio');
+				video.src = URL.createObjectURL(stream);
+				video.controls = true;
+				video.muted = true;
+				video.id = 'self';
+				video.play();
+				video.autoplay = true;
+				//alert(222);
+				
+				if (document.getElementById(video.id)) 
+				{
+					
+				}else{
+					local.appendChild(video);
+				}
+				callback(stream);
+			});
+		}
+		
+		this.onStreamAdded = function(e) 
+		{
+		   
+			var audio = e.mediaElement;
+			//alert(audio.id);
+			if(audio.id==channel)
+			{
+				if (document.getElementById(audio.id)) 
+				{
+					var video = document.getElementById(video.id);
+					if (video) video.parentNode.removeChild(video);
+				}
+				remot.appendChild(audio);
+			 
+			}
+			
+		};
+		
+		this.sendParticipationRequest = function (userid) 
 		{
 			//alert(userid);
             socket.send({
                 participationRequest: true,
-                userid: root.userid,
+                userid: this.userid,
                 to: userid
             });
         };
+		
+		
+		
+    };
 
-        
-        this.onsdp = function (message) // if someone shared SDP
+    function Signaler(root, socket) 
+	{
+        var self = this;
+		//var socket = socketURL;
+		socket.onmessage = onmessage;//接受消息
+		
+        var candidates = [];
+		
+		function onmessage(e) 
 		{
-            var sdp = message.sdp;
+			
+			var message = JSON.parse(e.data);
 
-            if (sdp.type == 'offer') 
+            if (message.userid == root.userid) return;//root.userid为学生id
+            //root.participant = message.userid;
+
+            //alert(root.userid);
+			//alert(message.sdp);
+            
+            if (message.sdp && message.to == root.userid) // if someone shared SDP
 			{
 				//alert(111);
-                root.peers[message.userid] = Answer.createAnswer(merge(options, {
-                    MediaStream: root.MediaStream,
-                    sdp: sdp
-                }));
+                var sdp = message.sdp;
+				
+				if (sdp.type == 'offer') 
+				{
+					
+					root.peers[message.userid] = Answer.createAnswer(merge(options, {
+						MediaStream: root.MediaStream,
+						sdp: sdp
+					}));
+				}
             }
 			
-        };
-
-
-        var candidates = [];
-        
-        this.onice = function (message) // if someone shared ICE
-		{
-            var peer = root.peers[message.userid];
-            if (peer) 
+            if (message.candidate && message.to == root.userid) // if someone shared ICE
 			{
-                peer.addIceCandidate(message.candidate);
-                for (var i = 0; i < candidates.length; i++) 
+				//alert(message.sdp);
+				//alert(candidates.length);
+                var peer = root.peers[message.userid];
+				if (peer) 
 				{
-                    peer.addIceCandidate(candidates[i]);
-                }
-                candidates = [];
-            } else candidates.push(candidates);
-        };
+					peer.addIceCandidate(message.candidate);
+					for (var i = 0; i < candidates.length; i++) 
+					{
+						peer.addIceCandidate(candidates[i]);
+					}
+					candidates = [];
+				} else candidates.push(candidates);
+            }
 
-        
-        var options = // it is passed over Offer/Answer objects for reusability
+            if (message.broadcasting && root.onUserFound ) 
+			{
+				//alert(123);
+                root.onUserFound(message.userid);
+            }
+			
+			if (message.userLeft) 
+			{
+                var video = document.getElementById(message.userid);
+				if (video) 
+				{
+					video.parentNode.removeChild(video);
+					root.peers[message.userid].peer.close();
+					root.peers[message.userid] = {};
+				}
+				
+				
+            }
+            
+		}
+		
+		
+		var options = // it is passed over Offer/Answer objects for reusability
 		{
             onsdp: function (sdp) 
 			{
@@ -106,47 +209,10 @@
                     
             }
         };
-
-        
 		
-		function onmessage(e) 
+		
+		function closePeerConnections() 
 		{
-			//
-			//alert(111);
-			var message = JSON.parse(e.data);
-
-            if (message.userid == root.userid) return;
-            root.participant = message.userid;
-
-            
-
-            
-            if (message.sdp && message.to == root.userid) // if someone shared SDP
-			{
-                self.onsdp(message);
-            }
-			
-            if (message.candidate && message.to == root.userid) // if someone shared ICE
-			{
-                self.onice(message);
-            }
-
-            
-			
-			
-            if (message.broadcasting && root.onUserFound) 
-			{
-                root.onUserFound(message.userid);
-            }
-
-            
-		}
-		
-		var socket = socketURL;
-		
-		socket.onmessage = onmessage;//接受消息
-		
-		function closePeerConnections() {
             //self.stopBroadcasting = true;
             if (root.MediaStream) root.MediaStream.stop();
 
@@ -156,18 +222,16 @@
             root.peers = {};
         }
 
-        root.close = function () {
-            socket.send({
-                userLeft: true,
-                userid: root.userid,
-                to: root.participant
-            });
-            closePeerConnections();
-        };
+        
 
         window.onbeforeunload = function () {
-			//alert(111);
-            root.close();
+			//alert(root.participant);
+            socket.send({
+                userLeft: true,
+                userid: root.userid,  //当前学生id
+                to: root.participant	//应该为要对话的老师的id
+            });
+            //closePeerConnections();
         };
 		
 		
@@ -230,13 +294,15 @@
     // answer.setRemoteDescription(sdp);
     // answer.addIceCandidate(candidate);
     var Answer = {
-        createAnswer: function (config) {
+        createAnswer: function (config) 
+		{
+			//alert(333);
             var peer = new RTCPeerConnection(iceServers, optionalArgument);
 
             if (config.MediaStream) peer.addStream(config.MediaStream);
             peer.onaddstream = function (event) 
 			{
-				//alert(222);
+				
                 config.onStreamAdded(event.stream);
             };
 

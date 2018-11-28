@@ -32,7 +32,9 @@
                 };
 
                 var peer = new PeerConnection(websocket,channel);
-               
+				//window.onbeforeunload();
+			   
+			   
                 getUserMedia(function(stream) { //打开并创建本地audio
 					peer.addStream(stream);
 					peer.startBroadcasting();//开始播放
@@ -56,12 +58,21 @@
 						video.id = 'self';
 						video.play();
 						video.autoplay = true;
+						//alert(111);
 						if (document.getElementById(video.id)) 
 						{
 							
 						}else{
 							local.appendChild(video);
 						}
+						
+						/*var video = document.getElementById(video.id);
+						if (video) 
+						{
+							video.parentNode.removeChild(video);
+						}	
+						local.appendChild(video);*/
+						
                     });
                 }
 				
