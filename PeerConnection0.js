@@ -4,22 +4,101 @@
 
 (function () {
 	
-    window.PeerConnection = function (socketURL, userid) {
+    window.PeerConnection = function (channel, userid,local,remot) {
         this.userid = userid ;
         this.peers = {};
 		
-        new Signaler(this, socketURL);
+		var pub = 'pub-f986077a-73bd-4c28-8e50-2e44076a84e0';
+		var sub = 'sub-b8f4c07a-352e-11e2-bb9d-c7df1d04ae4a';
+		WebSocket  = PUBNUB.ws;
+		var websocket = new WebSocket('wss://pubsub.pubnub.com/' + pub + '/' + sub + '/' + channel);	
+		websocket.push = websocket.send;
+		websocket.send = function(data) {
+			websocket.push(JSON.stringify(data));
+		};
+		
+		var socket = websocket;
+        new Signaler(this, socket);
 		
 		this.addStream = function(stream) 
 		{	
 			this.MediaStream = stream;
 		};
+		
+		this.getUserMedia = function(callback) 
+		{
+			
+			var constraints = {
+					audio: true,
+					video: {
+                            optional: [],
+                            mandatory: {}
+                        }
+				};
+
+            navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
+
+            function onstream(stream) 
+			{
+                //alert(111);
+                var video = document.createElement('audio');
+                video.id = 'self';
+                video.muted = true;
+                video.volume = 0;
+                
+                try {
+                        video.setAttributeNode(document.createAttribute('autoplay'));
+                        video.setAttributeNode(document.createAttribute('playsinline'));
+                        video.setAttributeNode(document.createAttribute('controls'));
+                    } catch (e) {
+                        video.setAttribute('autoplay', true);
+                        video.setAttribute('playsinline', true);
+                        video.setAttribute('controls', true);
+                    }
+
+                video.srcObject = stream;
+				this.MediaStream = stream;
+				
+                if (document.getElementById(video.id)) 
+				{
+					
+				}else{
+					local.appendChild(video);
+				}
+
+                callback(stream);
+            }
+
+            function onerror(e) {
+                console.error(e);
+            }
+			
+			
+			//alert(111);
+		}
+		
+		this.onStreamAdded = function(e) //这里是创建远端连接 
+		{
+			
+			var audio = e.mediaElement;
+			
+			if (document.getElementById(audio.id)) 
+			{
+				
+				var video = document.getElementById(video.id);
+				if (video) video.parentNode.removeChild(video);
+			}
+			
+			remot.appendChild(audio);
+			
+		};
+		
     };
 
-    function Signaler(root, socketURL) 
+    function Signaler(root, socket) 
 	{
         var self = this;
-		var socket = socketURL;
+		//var socket = socketURL;
 		socket.onmessage = onmessage;//接受消息
 		
 		root.startBroadcasting = function () //老师开始播音，一般是创建教室的人调用这个函数
@@ -159,8 +238,17 @@
 				
 				
                 mediaElement.id = root.participant;
-                mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.webkitURL.createObjectURL(stream);
-                mediaElement.autoplay = true;
+                
+				var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
+				if (agent.indexOf("safari") > 0 && agent.indexOf("chrome") < 0) 
+				{
+					//audio['src'] = window.URL.createObjectURL(stream);
+				}
+				else{
+					mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
+				}
+				
+				mediaElement.autoplay = true;
                 mediaElement.controls = true;
 				mediaElement.srcObject = stream;
 				
@@ -212,12 +300,12 @@
 		
     }
 
-    var RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-    var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
-    var RTCIceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
+    var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;//定义RTCPeerConnection类
+    var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
+    var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate;
 
-    navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
-    window.URL = window.webkitURL || window.URL;
+    navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+    window.URL = window.URL || window.webkitURL;
 
     var isFirefox = !!navigator.mozGetUserMedia;
     var isChrome = !!navigator.webkitGetUserMedia;
@@ -312,23 +400,6 @@
         return mergein;
     }
 	
-	window.URL = window.webkitURL || window.URL;
-	navigator.getMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-	navigator.getUserMedia = function(hints, onsuccess, onfailure) 
-	{
-		if(!hints) hints = {audio:true,video:true};
-		if(!onsuccess) throw 'Second argument is mandatory. navigator.getUserMedia(hints,onsuccess,onfailure)';
-		
-		navigator.getMedia(hints, _onsuccess, _onfailure);
-		
-		function _onsuccess(stream) {
-			onsuccess(stream);
-		}
-		
-		function _onfailure(e) {
-			if(onfailure) onfailure(e);
-			else throw Error('getUserMedia failed: ' + JSON.stringify(e, null, '\t'));
-		}
-	};
+	
 	
 })();

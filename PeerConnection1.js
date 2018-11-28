@@ -227,7 +227,7 @@
 					//audio['src'] = window.URL.createObjectURL(stream);
 				}
 				else{
-					audio[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
+					mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
 				}
 				
 				mediaElement.autoplay = true;
