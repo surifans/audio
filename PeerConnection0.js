@@ -235,15 +235,6 @@
 				
                 var mediaElement = document.createElement('audio');
 				
-				var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
-				if (agent.indexOf("safari") > 0 && agent.indexOf("chrome") < 0) 
-				{
-					//audio['src'] = window.URL.createObjectURL(stream);
-				}
-				else{
-					mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
-				}
-				
 				
                 mediaElement.id = root.participant;
                 
