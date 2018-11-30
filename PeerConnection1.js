@@ -87,6 +87,30 @@
 			//alert(111);
 		}
 		
+		this.OneWayListen = function(callback) 
+		{
+			
+			var constraints = {
+					audio: true,
+					video: false
+				};
+
+            navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
+
+            function onstream(stream) 
+			{
+                
+                
+
+                callback(stream);
+            }
+
+            function onerror(e) {
+                console.error(e);
+            }
+		}
+		
+		
 		this.onStreamAdded = function(e) 
 		{
 		   
@@ -218,43 +242,51 @@
             },
             onStreamAdded: function (stream) 
 			{
-				
-                var mediaElement = document.createElement('audio');
-                mediaElement.id = root.participant;
-                var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
-				if (agent.indexOf("safari") > 0 && agent.indexOf("chrome") < 0) 
-				{
-					//audio['src'] = window.URL.createObjectURL(stream);
-				}
-				else{
-					mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
-				}
-				
-				mediaElement.autoplay = true;
-                mediaElement.controls = true;
-                mediaElement.play();
-				
 				//alert(111);
-				mediaElement.srcObject = stream;
+                var video = document.createElement('video');
 				
-                var streamObject = {
-                    mediaElement: mediaElement,
-                    stream: stream,
-                    userid: root.participant,
-                    type: 'remote'
-                };
+                video.id = root.participant;
 				
-                if (root.onStreamAdded)
+                //var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
+				//if (agent.indexOf("safari") > 0 && agent.indexOf("chrome") < 0) 
+				//{
+					//audio['src'] = window.URL.createObjectURL(stream);
+				//}
+				//else{
+				//	video[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
+				//}
+				
+				//video.autoplay = true;
+                //video.controls = true;
+				video.srcObject = stream;
+				
+				try {
+                        video.setAttributeNode(document.createAttribute('autoplay'));
+                        video.setAttributeNode(document.createAttribute('playsinline'));
+                        video.setAttributeNode(document.createAttribute('controls'));
+                    } catch (e) {
+                        video.setAttribute('autoplay', true);
+                        video.setAttribute('playsinline', true);
+                        video.setAttribute('controls', true);
+                    }
+				
+				
+				
+				if(video.id==channel)
 				{
+					if (document.getElementById(video.id)) 
+					{
+						var video = document.getElementById(video.id);
+						if (video) video.parentNode.removeChild(video);
+					}
+					remot.appendChild(video);
 					
-					root.onStreamAdded(streamObject);
+					var video = document.getElementById(video.id);
+					video.autoplay = true;
+					
 				}
 				
-				/*var video = document.getElementById(mediaElement.id);
-				if (video) video.parentNode.removeChild(video);
 				
-				remot.appendChild(mediaElement);*/
-                    
             }
         };
 		
@@ -398,7 +430,8 @@
     // var answer = Answer.createAnswer(config);
     // answer.setRemoteDescription(sdp);
     // answer.addIceCandidate(candidate);
-    var Answer = {
+    var Answer = 
+	{
         createAnswer: function (config) 
 		{
 			

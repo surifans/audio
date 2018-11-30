@@ -38,10 +38,7 @@
 			
 			var constraints = {
 					audio: true,
-					video: {
-                            optional: [],
-                            mandatory: {}
-                        }
+					video: false
 				};
 
             navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
