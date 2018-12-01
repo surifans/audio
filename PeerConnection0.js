@@ -38,10 +38,7 @@
 			
 			var constraints = {
 					audio: true,
-					video: {
-                            optional: [],
-                            mandatory: {}
-                        }
+					video: false
 				};
 
             navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
@@ -49,7 +46,7 @@
             function onstream(stream) 
 			{
                 //alert(111);
-                var video = document.createElement('audio');
+                var video = document.createElement('video');
                 video.id = 'self';
                 video.muted = true;
                 video.volume = 0;
