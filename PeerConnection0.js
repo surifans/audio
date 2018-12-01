@@ -38,7 +38,10 @@
 			
 			var constraints = {
 					audio: true,
-					video: false
+					video: {
+                            optional: [],
+                            mandatory: {}
+                        }
 				};
 
             navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
@@ -147,16 +150,7 @@
             }
 			if (message.participationRequest && message.to == root.userid) // if someone sent participation request
 			{
-				/*if(root.peers[message.userid])//先初始化一下
-				{
-					root.peers[message.userid].peer.close();
-					root.peers[message.userid] = {};
-				}
-				var video = document.getElementById(message.userid);
-				if (video) 
-				{
-					video.parentNode.removeChild(video);
-				}*/	
+				
 				//alert(222);
 				root.participant = message.userid;
 				root.peers[message.userid] = Offer.createOffer(merge(options, 
@@ -209,7 +203,7 @@
             
 		}
 		
-        var options = // it is passed over Offer/Answer objects for reusability
+        var options = 
 		{
             onsdp: function (sdp) 
 			{
@@ -403,6 +397,7 @@
 	{
         createOffer: function (config) 
 		{
+			//alert(111);
             var peer = new RTCPeerConnection(iceServers, optionalArgument);
 
             if (config.MediaStream) peer.addStream(config.MediaStream);
