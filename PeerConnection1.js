@@ -69,12 +69,12 @@
                 video.srcObject = stream;
 				this.MediaStream = stream;
 				
-                if (document.getElementById(video.id)) 
-				{
-					
-				}else{
-					local.appendChild(video);
-				}
+                
+				var audio = document.getElementById(video.id);
+				if (audio) audio.parentNode.removeChild(audio);
+				
+				local.appendChild(video);
+				
 
                 callback(stream);
             }
@@ -86,30 +86,6 @@
 			
 			//alert(111);
 		}
-		
-		this.OneWayListen = function(callback) 
-		{
-			
-			var constraints = {
-					audio: true,
-					video: false
-				};
-
-            navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
-
-            function onstream(stream) 
-			{
-                
-                
-
-                callback(stream);
-            }
-
-            function onerror(e) {
-                console.error(e);
-            }
-		}
-		
 		
 		this.onStreamAdded = function(e) 
 		{
@@ -147,6 +123,21 @@
 			}
 			
 		};
+		
+		this.participat = function() 
+		{
+			//var audio = document.getElementById(channel);
+			//if (audio) audio.parentNode.removeChild(audio);
+			
+			socket.send({
+				participationRequest: true,
+				userid: this.userid,
+				to: channel
+			});
+			
+			
+		};
+		
 		
     };
 
@@ -247,17 +238,6 @@
 				
                 video.id = root.participant;
 				
-                //var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
-				//if (agent.indexOf("safari") > 0 && agent.indexOf("chrome") < 0) 
-				//{
-					//audio['src'] = window.URL.createObjectURL(stream);
-				//}
-				//else{
-				//	video[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
-				//}
-				
-				//video.autoplay = true;
-                //video.controls = true;
 				video.srcObject = stream;
 				
 				try {
@@ -274,16 +254,10 @@
 				
 				if(video.id==channel)
 				{
-					if (document.getElementById(video.id)) 
-					{
-						var video = document.getElementById(video.id);
-						if (video) video.parentNode.removeChild(video);
-					}
+					var audio = document.getElementById(video.id);
+					if (audio) audio.parentNode.removeChild(audio);
+					
 					remot.appendChild(video);
-					
-					var video = document.getElementById(video.id);
-					video.autoplay = true;
-					
 				}
 				
 				
@@ -304,14 +278,15 @@
 
         
 
-        window.onbeforeunload = function () {
+        root.onbeforeunload = function () 
+		{
 			//alert(root.participant);
             socket.send({
                 userLeft: true,
                 userid: root.userid,  //当前学生id
                 to: root.participant	//应该为要对话的老师的id
             });
-            //closePeerConnections();
+            closePeerConnections();
         };
 		
 		
@@ -430,8 +405,7 @@
     // var answer = Answer.createAnswer(config);
     // answer.setRemoteDescription(sdp);
     // answer.addIceCandidate(candidate);
-    var Answer = 
-	{
+    var Answer = {
         createAnswer: function (config) 
 		{
 			
