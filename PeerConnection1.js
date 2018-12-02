@@ -184,7 +184,7 @@
                 root.onUserFound(message.userid);
             }
 			
-			if (message.userLeft && message.userid==root.participant) 
+			if (message.userLeft && message.userid==root.participant) //  && message.to==root.userid
 			{
                 var video = document.getElementById(message.userid);
 				if (video) 

@@ -111,15 +111,13 @@
 			
 			if (message.userLeft && message.to == root.userid) 
 			{
-				//alert(111);
-                var video = document.getElementById(message.userid);
-				if (video) 
+				if(root.peers[message.userid])
 				{
-					video.parentNode.removeChild(video);
-				}	
-				if(root.peers[message.userid]){
-					root.peers[message.userid].peer.close();
-					root.peers[message.userid] = {};
+					socket.send({         
+						userLeft: true,
+						userid: root.userid,  
+						//to: message.userid	
+					});
 				}
             }
 			
