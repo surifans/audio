@@ -130,9 +130,6 @@
 		{
 			
 			var message = JSON.parse(e.data);
-			
-			
-			
             if (message.userid == root.userid) return;
             //alert(000);
 			
@@ -143,27 +140,14 @@
 				if (video) 
 				{
 					video.parentNode.removeChild(video);
+					
 				}	
-				if(root.peers[message.userid])
-				{
+				if(root.peers[message.userid]){
 					root.peers[message.userid].peer.close();
 					root.peers[message.userid] = {};
-					socket.send({      
-						userLeft: true,
-						userid: root.userid,  
-						//to: message.userid
-					});
 				}
-				
-				
-				
-				
-				/*socket.send({      
-					re_participat: true,
-					to: message.userid
-				});*/
-				
             }
+			
 			if (message.participationRequest && message.to == root.userid) // if someone sent participation request
 			{
 				
@@ -184,23 +168,6 @@
 					root.peers[message.userid].setRemoteDescription(sdp);
 				}
             }
-			
-            if (message.candidate && message.to == root.userid) // if someone shared ICE
-			{
-				//alert(444);
-                var candidates = [];
-				var peer = root.peers[message.userid];
-				if (peer) 
-				{
-					peer.addIceCandidate(message.candidate);
-				} 
-				
-            }
-		
-            
-			
-			
-            
 		}
 		
         var options = 
@@ -225,8 +192,6 @@
                 
 				
                 var mediaElement = document.createElement('audio');
-				
-				
                 mediaElement.id = root.participant;
                 
 				var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
@@ -243,27 +208,10 @@
                 mediaElement.controls = true;
 				mediaElement.srcObject = stream;
 				
-                
-				
-                /*var streamObject = {
-                    mediaElement: mediaElement,
-                    stream: stream,
-                    userid: root.participant,
-                    type: 'remote'
-                };
-
-                if (root.onStreamAdded)
-				{
-					//alert(111);
-					root.onStreamAdded(streamObject);
-				}*/
-				
-				
-				var video = document.getElementById(mediaElement.id);
+                var video = document.getElementById(mediaElement.id);
 				if (video) video.parentNode.removeChild(video);
 				
 				remot.appendChild(mediaElement);
-				
             }
         };
 
@@ -408,9 +356,8 @@
             var peer = new RTCPeerConnection(iceServers, optionalArgument);
 
             if (config.MediaStream) peer.addStream(config.MediaStream);
-            peer.onaddstream = function (event) 
+            peer.onaddstream = function (event) //用于创建本地video
 			{
-				//alert(111);
                 config.onStreamAdded(event.stream);
             };
 
@@ -432,13 +379,7 @@
 		{
             this.peer.setRemoteDescription(new RTCSessionDescription(sdp));
         },
-        addIceCandidate: function (candidate) 
-		{
-            this.peer.addIceCandidate(new RTCIceCandidate({
-                sdpMLineIndex: candidate.sdpMLineIndex,
-                candidate: candidate.candidate
-            }));
-        }
+        
     };
 	
 

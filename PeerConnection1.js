@@ -118,7 +118,7 @@
 				socket.send({
 					participationRequest: true,
 					userid: this.userid,
-					to: channel
+					to: this.participant
 				});
 			}
 			
@@ -138,23 +138,6 @@
 			
 		};
 		
-		/*this.connect = false;
-		(function set_online_false() 
-		{
-			this.connect=false;
-			setTimeout(set_online_false, 3000);
-			
-		})();
-		
-		(function check_if_connect() 
-		{
-			if(this.connect==false)
-			{
-				//peer.onbeforeunload();
-				this.participat();
-			}
-			setTimeout(check_if_connect, 5000);
-		})();*/
 		
     };
 
@@ -164,8 +147,6 @@
 		//var socket = socketURL;
 		socket.onmessage = onmessage;//接受消息
 		
-        var candidates = [];
-		
 		function onmessage(e) 
 		{
 			
@@ -173,18 +154,10 @@
 
             if (message.userid == root.userid) return;//root.userid为学生id
             
-			//root.connect=false;
-			
-			//root.participant = message.userid;
-
-            //alert(root.userid);
-			//alert(message.sdp);
-            
             if (message.sdp && message.to == root.userid) // if someone shared SDP
 			{
 				//alert(111);
                 var sdp = message.sdp;
-				
 				if (sdp.type == 'offer') 
 				{
 					
@@ -197,18 +170,12 @@
 			
             if (message.candidate && message.to == root.userid) // if someone shared ICE
 			{
-				//alert(message.sdp);
-				//alert(candidates.length);
                 var peer = root.peers[message.userid];
 				if (peer) 
 				{
 					peer.addIceCandidate(message.candidate);
-					for (var i = 0; i < candidates.length; i++) 
-					{
-						peer.addIceCandidate(candidates[i]);
-					}
-					candidates = [];
-				} else candidates.push(candidates);
+					
+				} 
             }
 
             if (message.broadcasting && root.onUserFound ) 
@@ -217,23 +184,18 @@
                 root.onUserFound(message.userid);
             }
 			
-			if (message.userLeft) //&& message.to==root.userid
+			if (message.userLeft) 
 			{
-				var video = document.getElementById(message.userid);
+                var video = document.getElementById(message.userid);
 				if (video) 
 				{
-					//video.parentNode.removeChild(video);
+					video.parentNode.removeChild(video);
 					root.peers[message.userid].peer.close();
 					root.peers[message.userid] = {};
-					root.participat();
 				}
 				
+				
             }
-			
-			/*if (message.re_participat&& message.to==root.userid)
-			{
-				root.participat();
-			}*/
             
 		}
 		
@@ -248,37 +210,14 @@
                     to: root.participant
                 });
             },
-            onicecandidate: function (candidate) 
-			{
-                socket.send({
-                    userid: root.userid,
-                    candidate: candidate,
-                    to: root.participant
-                });
-            },
+            
             onStreamAdded: function (stream) 
 			{
-				var video = document.getElementById(root.participant);
-				if (video)
-				{
-					video.id = root.participant;
-					video.srcObject = stream;
-					
-					try {
-							video.setAttributeNode(document.createAttribute('autoplay'));
-							video.setAttributeNode(document.createAttribute('playsinline'));
-							video.setAttributeNode(document.createAttribute('controls'));
-						} catch (e) {
-							video.setAttribute('autoplay', true);
-							video.setAttribute('playsinline', true);
-							video.setAttribute('controls', true);
-						}
-					return;
-				}
-				
-				
+				//alert(111);
                 var video = document.createElement('video');
+				
                 video.id = root.participant;
+				
 				video.srcObject = stream;
 				
 				try {
@@ -290,10 +229,14 @@
                         video.setAttribute('playsinline', true);
                         video.setAttribute('controls', true);
                     }
+				
+				
+				
 				if(video.id==channel)
 				{
-					//var audio = document.getElementById(video.id);
-					//if (audio) audio.parentNode.removeChild(audio);
+					var audio = document.getElementById(video.id);
+					if (audio) audio.parentNode.removeChild(audio);
+					
 					remot.appendChild(video);
 				}
 				
@@ -438,10 +381,7 @@
     
 	function onSdpError() {}
 
-
-    // var answer = Answer.createAnswer(config);
-    // answer.setRemoteDescription(sdp);
-    // answer.addIceCandidate(candidate);
+	
     var Answer = {
         createAnswer: function (config) 
 		{
@@ -455,10 +395,7 @@
                 config.onStreamAdded(event.stream);
             };
 
-            peer.onicecandidate = function (event) {
-                if (event.candidate)
-                    config.onicecandidate(event.candidate);
-            };
+            
 
             peer.setRemoteDescription(new RTCSessionDescription(config.sdp));
             peer.createAnswer(function (sdp) {
