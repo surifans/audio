@@ -38,12 +38,8 @@
 			
 			var constraints = {
 					audio: true,
-					video: {
-                            optional: [],
-                            mandatory: {}
-                        }
+					video: true
 				};
-
             navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
 
             function onstream(stream) 
@@ -52,7 +48,6 @@
                 var video = document.createElement('video');
                 video.id = 'self';
                 video.muted = true;
-                video.volume = 0;
                 
                 try {
                         video.setAttributeNode(document.createAttribute('autoplay'));
@@ -67,27 +62,17 @@
                 video.srcObject = stream;
 				this.MediaStream = stream;
 				
-                if (document.getElementById(video.id)) 
-				{
-					
-				}else{
-					local.appendChild(video);
-				}
+				local.appendChild(video);
 
                 callback(stream);
             }
-
             function onerror(e) {
                 console.error(e);
             }
-			
-			
-			//alert(111);
 		}
 		
 		this.onStreamAdded = function(e) //这里是创建远端连接 
 		{
-			
 			var audio = e.mediaElement;
 			
 			if (document.getElementById(audio.id)) 
@@ -96,32 +81,23 @@
 				var video = document.getElementById(video.id);
 				if (video) video.parentNode.removeChild(video);
 			}
-			
 			remot.appendChild(audio);
-			
 		};
 		
     };
 
     function Signaler(root, socket) 
-	{
-        var self = this;
-		//var socket = socketURL;
+	{	
 		socket.onmessage = onmessage;//接受消息
-		
 		root.startBroadcasting = function () //老师开始播音，一般是创建教室的人调用这个函数
 		{
-			
             (function transmit() 
 			{
                 socket.send({
                     userid: root.userid,
                     broadcasting: true
                 });
-				//alert(222);
-                //!self.participantFound &&!self.stopBroadcasting &&setTimeout(transmit, 1000);
 				setTimeout(transmit, 1000);//这里一直发送信号，让学生加入
-				
             })();
         };
 		
@@ -140,7 +116,6 @@
 				if (video) 
 				{
 					video.parentNode.removeChild(video);
-					
 				}	
 				if(root.peers[message.userid]){
 					root.peers[message.userid].peer.close();
@@ -216,7 +191,7 @@
         };
 
         function closePeerConnections() {
-            //self.stopBroadcasting = true;
+            
             if (root.MediaStream) root.MediaStream.stop();
 
             for (var userid in root.peers) {

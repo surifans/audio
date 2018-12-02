@@ -184,7 +184,7 @@
                 root.onUserFound(message.userid);
             }
 			
-			if (message.userLeft) 
+			if (message.userLeft && message.userid==root.participant) 
 			{
                 var video = document.getElementById(message.userid);
 				if (video) 
@@ -192,9 +192,7 @@
 					video.parentNode.removeChild(video);
 					root.peers[message.userid].peer.close();
 					root.peers[message.userid] = {};
-				}
-				
-				
+				}	
             }
             
 		}
