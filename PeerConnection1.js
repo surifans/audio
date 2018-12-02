@@ -138,6 +138,23 @@
 			
 		};
 		
+		/*this.connect = false;
+		(function set_online_false() 
+		{
+			this.connect=false;
+			setTimeout(set_online_false, 3000);
+			
+		})();
+		
+		(function check_if_connect() 
+		{
+			if(this.connect==false)
+			{
+				//peer.onbeforeunload();
+				this.participat();
+			}
+			setTimeout(check_if_connect, 5000);
+		})();*/
 		
     };
 
@@ -155,7 +172,10 @@
 			var message = JSON.parse(e.data);
 
             if (message.userid == root.userid) return;//root.userid为学生id
-            //root.participant = message.userid;
+            
+			//root.connect=false;
+			
+			//root.participant = message.userid;
 
             //alert(root.userid);
 			//alert(message.sdp);
@@ -197,18 +217,23 @@
                 root.onUserFound(message.userid);
             }
 			
-			if (message.userLeft) 
+			if (message.userLeft) //&& message.to==root.userid
 			{
-                var video = document.getElementById(message.userid);
+				var video = document.getElementById(message.userid);
 				if (video) 
 				{
-					video.parentNode.removeChild(video);
+					//video.parentNode.removeChild(video);
 					root.peers[message.userid].peer.close();
 					root.peers[message.userid] = {};
+					root.participat();
 				}
 				
-				
             }
+			
+			/*if (message.re_participat&& message.to==root.userid)
+			{
+				root.participat();
+			}*/
             
 		}
 		
@@ -233,11 +258,27 @@
             },
             onStreamAdded: function (stream) 
 			{
-				//alert(111);
+				var video = document.getElementById(root.participant);
+				if (video)
+				{
+					video.id = root.participant;
+					video.srcObject = stream;
+					
+					try {
+							video.setAttributeNode(document.createAttribute('autoplay'));
+							video.setAttributeNode(document.createAttribute('playsinline'));
+							video.setAttributeNode(document.createAttribute('controls'));
+						} catch (e) {
+							video.setAttribute('autoplay', true);
+							video.setAttribute('playsinline', true);
+							video.setAttribute('controls', true);
+						}
+					return;
+				}
+				
+				
                 var video = document.createElement('video');
-				
                 video.id = root.participant;
-				
 				video.srcObject = stream;
 				
 				try {
@@ -249,14 +290,10 @@
                         video.setAttribute('playsinline', true);
                         video.setAttribute('controls', true);
                     }
-				
-				
-				
 				if(video.id==channel)
 				{
-					var audio = document.getElementById(video.id);
-					if (audio) audio.parentNode.removeChild(audio);
-					
+					//var audio = document.getElementById(video.id);
+					//if (audio) audio.parentNode.removeChild(audio);
 					remot.appendChild(video);
 				}
 				

@@ -143,10 +143,26 @@
 				if (video) 
 				{
 					video.parentNode.removeChild(video);
+				}	
+				if(root.peers[message.userid])
+				{
 					root.peers[message.userid].peer.close();
 					root.peers[message.userid] = {};
-					
-				}	
+					socket.send({      
+						userLeft: true,
+						userid: root.userid,  
+						//to: message.userid
+					});
+				}
+				
+				
+				
+				
+				/*socket.send({      
+					re_participat: true,
+					to: message.userid
+				});*/
+				
             }
 			if (message.participationRequest && message.to == root.userid) // if someone sent participation request
 			{
@@ -178,22 +194,6 @@
 				{
 					peer.addIceCandidate(message.candidate);
 				} 
-				/*var peer = peers[message.userid];
-				if (!peer) {
-					var candidate = candidates[message.userid];
-					if (candidate) candidates[message.userid][candidate.length] = message.candidate;
-					else candidates[message.userid] = [message.candidate];
-				} else {
-					peer.addIceCandidate(message.candidate);
-
-					var _candidates = candidates[message.userid] || [];
-					if (_candidates.length) {
-						for (var i = 0; i < _candidates.length; i++) {
-							peer.addIceCandidate(_candidates[i]);
-						}
-						candidates[message.userid] = [];
-					}
-				}*/
 				
             }
 		
@@ -245,7 +245,7 @@
 				
                 
 				
-                var streamObject = {
+                /*var streamObject = {
                     mediaElement: mediaElement,
                     stream: stream,
                     userid: root.participant,
@@ -256,7 +256,14 @@
 				{
 					//alert(111);
 					root.onStreamAdded(streamObject);
-				}
+				}*/
+				
+				
+				var video = document.getElementById(mediaElement.id);
+				if (video) video.parentNode.removeChild(video);
+				
+				remot.appendChild(mediaElement);
+				
             }
         };
 
