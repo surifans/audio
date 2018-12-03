@@ -113,11 +113,21 @@
 			{
 				if(root.peers[message.userid])
 				{
-					socket.send({         
+					/*for (var userid in root.peers) {
+						root.peers[userid].peer.close();
+					}
+					root.peers = {};*/
+					
+					/*socket.send({         
 						userLeft: true,
 						userid: root.userid,  
 						//to: message.userid	
-					});
+					});*/
+					/*socket.send({      
+						re_participat: true,
+						to: message.userid
+					});*/
+					
 				}
             }
 			

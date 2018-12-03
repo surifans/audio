@@ -105,25 +105,6 @@
 			
 		};
 		
-		
-		this.onUserFound = function(userid) 
-		{
-			
-			if(userid==channel)
-			{
-				
-				if (document.getElementById(userid)) return;
-				
-				
-				socket.send({
-					participationRequest: true,
-					userid: this.userid,
-					to: this.participant
-				});
-			}
-			
-		};
-		
 		this.participat = function() 
 		{
 			//var audio = document.getElementById(channel);
@@ -154,7 +135,7 @@
 
             if (message.userid == root.userid) return;//root.userid为学生id
             
-            if (message.sdp && message.to == root.userid) // if someone shared SDP
+            if (message.sdp && message.to == root.userid) //
 			{
 				//alert(111);
                 var sdp = message.sdp;
@@ -168,7 +149,7 @@
 				}
             }
 			
-            if (message.candidate && message.to == root.userid) // if someone shared ICE
+            if (message.candidate && message.to == root.userid) //
 			{
                 var peer = root.peers[message.userid];
 				if (peer) 
@@ -178,10 +159,14 @@
 				} 
             }
 
-            if (message.broadcasting && root.onUserFound ) 
+            if (message.broadcasting) 
 			{
-				//alert(123);
-                root.onUserFound(message.userid);
+				if (document.getElementById(root.participant)) return;
+				socket.send({
+					participationRequest: true,
+					userid: root.userid,
+					to: root.participant
+				});
             }
 			
 			if (message.userLeft && message.userid==root.participant) //  && message.to==root.userid
