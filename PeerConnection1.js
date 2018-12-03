@@ -203,7 +203,14 @@
 				
 				video.srcObject = stream;
 				
-				try {
+				video.muted = false;
+				
+                video.volume = 1;
+				video.autoplay = true;
+                video.controls = true;
+				
+				
+				/*try {
                         video.setAttributeNode(document.createAttribute('autoplay'));
                         video.setAttributeNode(document.createAttribute('playsinline'));
                         video.setAttributeNode(document.createAttribute('controls'));
@@ -211,7 +218,7 @@
                         video.setAttribute('autoplay', true);
                         video.setAttribute('playsinline', true);
                         video.setAttribute('controls', true);
-                    }
+                    }*/
 				
 				
 				

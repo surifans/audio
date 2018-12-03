@@ -49,15 +49,9 @@
                 video.id = 'self';
                 video.muted = true;
                 
-                try {
-                        video.setAttributeNode(document.createAttribute('autoplay'));
-                        video.setAttributeNode(document.createAttribute('playsinline'));
-                        video.setAttributeNode(document.createAttribute('controls'));
-                    } catch (e) {
-                        video.setAttribute('autoplay', true);
-                        video.setAttribute('playsinline', true);
-                        video.setAttribute('controls', true);
-                    }
+                video.volume = 1;
+				video.autoplay = true;
+                video.controls = true;
 
                 video.srcObject = stream;
 				this.MediaStream = stream;
@@ -111,6 +105,9 @@
 			
 			if (message.userLeft && message.to == root.userid) 
 			{
+				//var video = document.getElementById(message.userid);
+				//if (video) video.parentNode.removeChild(video);
+				
 				if(root.peers[message.userid])
 				{
 					/*for (var userid in root.peers) {
@@ -118,11 +115,11 @@
 					}
 					root.peers = {};*/
 					
-					/*socket.send({         
+					socket.send({         
 						userLeft: true,
 						userid: root.userid,  
 						//to: message.userid	
-					});*/
+					});
 					/*socket.send({      
 						re_participat: true,
 						to: message.userid
