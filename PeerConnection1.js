@@ -179,6 +179,18 @@
 					root.peers[message.userid] = {};
 				}	
             }
+			
+			if (message.re_connect && message.to==root.userid) //  && message.to==root.userid
+			{
+                var video = document.getElementById(message.userid);
+				if (video) 
+				{
+					video.parentNode.removeChild(video);
+					root.peers[message.userid].peer.close();
+					root.peers[message.userid] = {};
+				}	
+				
+            }
             
 		}
 		
@@ -208,18 +220,6 @@
                 video.volume = 1;
 				video.autoplay = true;
                 video.controls = true;
-				
-				
-				/*try {
-                        video.setAttributeNode(document.createAttribute('autoplay'));
-                        video.setAttributeNode(document.createAttribute('playsinline'));
-                        video.setAttributeNode(document.createAttribute('controls'));
-                    } catch (e) {
-                        video.setAttribute('autoplay', true);
-                        video.setAttribute('playsinline', true);
-                        video.setAttribute('controls', true);
-                    }*/
-				
 				
 				
 				if(video.id==channel)

@@ -4,167 +4,148 @@
 
 (function () {
 	
-    window.PeerConnection = function (channel, userid,local,remot) {
+    window.PeerConnection_first = function (channel, userid,local,remot) 
+	{
+		
         this.userid = userid ;
         this.peers = {};
+		this.participant = channel;
 		
 		var pub = 'pub-f986077a-73bd-4c28-8e50-2e44076a84e0';
 		var sub = 'sub-b8f4c07a-352e-11e2-bb9d-c7df1d04ae4a';
 		WebSocket  = PUBNUB.ws;
-		var websocket = new WebSocket('wss://pubsub.pubnub.com/' + pub + '/' + sub + '/' + channel);	
+		var websocket = new WebSocket('wss://pubsub.pubnub.com/' + pub + '/' + sub + '/' + channel);
 		websocket.push = websocket.send;
 		websocket.send = function(data) {
 			websocket.push(JSON.stringify(data));
 		};
 		
+		
 		var socket = websocket;
 		socket.send({         //初始化
 			userLeft: true,
-			userid: channel,  //当前学生id
-			//to: channel	//应该为要对话的老师的id
+			userid: this.userid,  //当前学生id
+			to: channel	//应该为要对话的老师的id
 		});
-		
 		
 		
         new Signaler(this, socket);
 		
-		this.addStream = function(stream) 
-		{	
+		this.addStream = function(stream) {	
 			this.MediaStream = stream;
 		};
 		
-		this.getUserMedia = function(callback) 
-		{
-			
-			var constraints = {
-					audio: true,
-					video: true
-				};
-            navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
-
-            function onstream(stream) 
-			{
-                //alert(111);
-                var video = document.createElement('video');
-                video.id = 'self';
-                video.muted = true;
-                
-                video.volume = 1;
-				video.autoplay = true;
-                video.controls = true;
-
-                video.srcObject = stream;
-				this.MediaStream = stream;
-				
-				local.appendChild(video);
-
-                callback(stream);
-            }
-            function onerror(e) {
-                console.error(e);
-            }
-		}
 		
-		this.onStreamAdded = function(e) //这里是创建远端连接 
+		
+		this.onStreamAdded = function(e) 
 		{
+		   
 			var audio = e.mediaElement;
-			
-			if (document.getElementById(audio.id)) 
+			//alert(audio.id);
+			if(audio.id==channel)
 			{
-				
-				var video = document.getElementById(video.id);
-				if (video) video.parentNode.removeChild(video);
+				if (document.getElementById(audio.id)) 
+				{
+					var video = document.getElementById(video.id);
+					if (video) video.parentNode.removeChild(video);
+				}
+				remot.appendChild(audio);
+			 
 			}
-			remot.appendChild(audio);
+			
 		};
+		
+		this.participat = function() 
+		{
+			//var audio = document.getElementById(channel);
+			//if (audio) audio.parentNode.removeChild(audio);
+			
+			socket.send({
+				participationRequest: true,
+				userid: this.userid,
+				to: channel
+			});
+			
+			
+		};
+		
 		
     };
 
     function Signaler(root, socket) 
-	{	
+	{
+        var self = this;
+		//var socket = socketURL;
 		socket.onmessage = onmessage;//接受消息
-		root.startBroadcasting = function () //老师开始播音，一般是创建教室的人调用这个函数
-		{
-            (function transmit() 
-			{
-                socket.send({
-                    userid: root.userid,
-                    broadcasting: true
-                });
-				setTimeout(transmit, 1000);//这里一直发送信号，让学生加入
-            })();
-        };
-		
 		
 		function onmessage(e) 
 		{
 			
 			var message = JSON.parse(e.data);
-            if (message.userid == root.userid) return;
-            //alert(000);
-			
-			if (message.userLeft && message.to == root.userid) 
+
+            if (message.userid == root.userid) return;//root.userid为学生id
+            
+            if (message.sdp && message.to == root.userid) //
 			{
-				var video = document.getElementById(message.userid);
+				//alert(111);
+                var sdp = message.sdp;
+				if (sdp.type == 'offer') 
+				{
+					
+					root.peers[message.userid] = Answer.createAnswer(merge(options, {
+						MediaStream: root.MediaStream,
+						sdp: sdp
+					}));
+				}
+            }
+			
+            if (message.candidate && message.to == root.userid) //
+			{
+                var peer = root.peers[message.userid];
+				if (peer) 
+				{
+					peer.addIceCandidate(message.candidate);
+					
+				} 
+            }
+
+            if (message.broadcasting) 
+			{
+				if (document.getElementById(root.participant)) return;
+				socket.send({
+					participationRequest: true,
+					userid: root.userid,
+					to: root.participant
+				});
+            }
+			
+			if (message.userLeft && message.userid==root.participant) //  && message.to==root.userid
+			{
+                var video = document.getElementById(message.userid);
 				if (video) 
 				{
 					video.parentNode.removeChild(video);
 					root.peers[message.userid].peer.close();
-					root.peers[message.userid]={};
-					
-					socket.send({         
-						userLeft: true,
-						userid: root.userid,  
-						//to: message.userid	
-					});
-					
-					return;
+					root.peers[message.userid] = {};
+				}	
+            }
+			
+			if (message.re_connect && message.to==root.userid) //  && message.to==root.userid
+			{
+                var video = document.getElementById(message.userid);
+				if (video) 
+				{
+					video.parentNode.removeChild(video);
+					root.peers[message.userid].peer.close();
+					root.peers[message.userid] = {};
 				}	
 				
-				
-				if(root.peers[message.userid])
-				{
-					//for (var userid in root.peers) {
-					//	root.peers[userid].peer.close();
-					//}
-					//root.peers = {};
-					
-					//root.peers[message.userid].peer.close();
-					//root.peers[message.userid]={};
-					
-					//alert(root.peers[message.userid]);
-					//console.log(root.peers[message.userid]);
-					
-					/*socket.send({         
-						re_connect: true,
-						to: message.userid	
-					});*/
-				}
             }
-			
-			if (message.participationRequest && message.to == root.userid) // if someone sent participation request
-			{
-				
-				//alert(222);
-				root.participant = message.userid;
-				root.peers[message.userid] = Offer.createOffer(merge(options, 
-				{
-					MediaStream: root.MediaStream
-				}));
-            }
-			
-            if (message.sdp && message.to == root.userid) // if someone shared SDP
-			{
-				//alert(333);
-				var sdp = message.sdp;
-				if (sdp.type == 'answer') 
-				{
-					root.peers[message.userid].setRemoteDescription(sdp);
-				}
-            }
+            
 		}
 		
-        var options = 
+		
+		var options = // it is passed over Offer/Answer objects for reusability
 		{
             onsdp: function (sdp) 
 			{
@@ -174,43 +155,39 @@
                     to: root.participant
                 });
             },
-            onicecandidate: function (candidate) {
-                socket.send({
-                    userid: root.userid,
-                    candidate: candidate,
-                    to: root.participant
-                });
-            },
+            
             onStreamAdded: function (stream) 
 			{
-                
+				//alert(111);
+                var video = document.createElement('audio');
 				
-                var mediaElement = document.createElement('audio');
-                mediaElement.id = root.participant;
-                
-				var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
-				if (agent.indexOf("safari") > 0 && agent.indexOf("chrome") < 0) 
+                video.id = root.participant;
+				
+				video.srcObject = stream;
+				
+				video.muted = true;
+				
+                video.volume = 1;
+				video.autoplay = true;
+                video.controls = false;
+				
+				
+				if(video.id==channel)
 				{
-					mediaElement.muted = true;
+					var audio = document.getElementById(video.id);
+					if (audio) audio.parentNode.removeChild(audio);
+					
+					remot.appendChild(video);
 				}
-				else{
-					mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
-					mediaElement.pause();
-				}
 				
-				mediaElement.autoplay = true;
-                mediaElement.controls = true;
-				mediaElement.srcObject = stream;
 				
-                var video = document.getElementById(mediaElement.id);
-				if (video) video.parentNode.removeChild(video);
-				
-				remot.appendChild(mediaElement);
             }
         };
-
-        function closePeerConnections() {
-            
+		
+		
+		function closePeerConnections() 
+		{
+            //self.stopBroadcasting = true;
             if (root.MediaStream) root.MediaStream.stop();
 
             for (var userid in root.peers) {
@@ -219,22 +196,24 @@
             root.peers = {};
         }
 
-        root.close = function () {
+        
+
+        root.onbeforeunload = function () 
+		{
+			//alert(root.participant);
             socket.send({
                 userLeft: true,
-                userid: root.userid,
-                //to: root.participant
+                userid: root.userid,  //当前学生id
+                to: root.participant	//应该为要对话的老师的id
             });
-            //closePeerConnections();
+            closePeerConnections();
         };
-
-        window.onbeforeunload = function () {
-			//alert(111);
-            root.close();
-        };
+		
+		
 		
     }
 
+	
 	var IceServersHandler = (function() 
 	{
         function getIceServers(connection) {
@@ -310,7 +289,8 @@
     };
 
     var iceServers = {
-        iceServers: IceServersHandler.getIceServers()
+        //iceServers: [STUN]
+		iceServers: IceServersHandler.getIceServers()
     };
 
     if (isChrome) {
@@ -339,28 +319,26 @@
     };
 
     
-	
 	function onSdpError() {}
-	
-    var Offer = 
-	{
-        createOffer: function (config) 
-		{
-			//alert(111);
-            var peer = new RTCPeerConnection(iceServers, optionalArgument);
 
+	
+    var Answer = {
+        createAnswer: function (config) 
+		{
+			
+            var peer = new RTCPeerConnection(iceServers, optionalArgument);
+			
             if (config.MediaStream) peer.addStream(config.MediaStream);
-            peer.onaddstream = function (event) //用于创建本地video
+            peer.onaddstream = function (event) 
 			{
+				//alert(333);
                 config.onStreamAdded(event.stream);
             };
 
-            peer.onicecandidate = function (event) {
-                if (event.candidate)
-                    config.onicecandidate(event.candidate);
-            };
+            
 
-            peer.createOffer(function (sdp) {
+            peer.setRemoteDescription(new RTCSessionDescription(config.sdp));
+            peer.createAnswer(function (sdp) {
                 peer.setLocalDescription(sdp);
                 config.onsdp(sdp);
             }, onSdpError, offerAnswerConstraints);
@@ -369,13 +347,13 @@
 
             return this;
         },
-        setRemoteDescription: function (sdp) 
-		{
-            this.peer.setRemoteDescription(new RTCSessionDescription(sdp));
-        },
-        
+        addIceCandidate: function (candidate) {
+            this.peer.addIceCandidate(new RTCIceCandidate({
+                sdpMLineIndex: candidate.sdpMLineIndex,
+                candidate: candidate.candidate
+            }));
+        }
     };
-	
 
     function merge(mergein, mergeto) {
         for (var t in mergeto) {

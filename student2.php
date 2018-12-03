@@ -19,7 +19,7 @@
 				var remot = document.getElementById('remote_media_stream');//返回指定ID元素
 				var local = document.getElementById('local_media_stream');
 				var channel ='66';//这里应该设为老师的id，否则不能接通
-				var userid='11_';//+Math.floor(Math.random()*10000);
+				var userid='33_';//+Math.floor(Math.random()*10000);
 				//alert(userid);
 				
 				var peer = new PeerConnection(channel,userid,local,remot);//在老师的远端建立的userid为11
