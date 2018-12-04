@@ -31,6 +31,8 @@
                 var channel ='66';//这里应该设为老师的id，否则不能接通
 				
                 var peer = new PeerConnection(channel,channel,local,remot);
+				peer.onbeforeunload();
+				
 				peer.getUserMedia(function(stream) {
 					peer.addStream(stream);
 					peer.startBroadcasting();

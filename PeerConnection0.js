@@ -112,11 +112,11 @@
 					root.peers[message.userid].peer.close();
 					root.peers[message.userid]={};
 					
-					socket.send({         
+					/*socket.send({         
 						userLeft: true,
 						userid: root.userid,  
 						//to: message.userid	
-					});
+					});*/
 					
 					return;
 				}	
@@ -225,10 +225,10 @@
                 userid: root.userid,
                 //to: root.participant
             });
-            //closePeerConnections();
+            closePeerConnections();
         };
 
-        window.onbeforeunload = function () {
+        root.onbeforeunload = function () {
 			//alert(111);
             root.close();
         };
