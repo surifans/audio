@@ -210,16 +210,20 @@
 			{
 				//alert(111);
                 var video = document.createElement('video');
-				
                 video.id = root.participant;
 				
 				video.srcObject = stream;
-				
 				video.muted = false;
-				
                 video.volume = 1;
-				video.autoplay = true;
-                video.controls = true;
+				try {
+                        video.setAttributeNode(document.createAttribute('autoplay'));
+                        video.setAttributeNode(document.createAttribute('playsinline'));
+                        video.setAttributeNode(document.createAttribute('controls'));
+                    } catch (e) {
+                        video.setAttribute('autoplay', true);
+                        video.setAttribute('playsinline', true);
+                        video.setAttribute('controls', false);
+                    }
 				
 				
 				if(video.id==channel)
