@@ -10,6 +10,8 @@
         this.userid = userid ;
         this.peers = {};
 		this.participant = channel;
+		this.remot_video=false;//学生端需要创建好了remot端的video标签后，才能开启本地麦克风，然后跟老师对话
+		
 		
 		var pub = 'pub-f986077a-73bd-4c28-8e50-2e44076a84e0';
 		var sub = 'sub-b8f4c07a-352e-11e2-bb9d-c7df1d04ae4a';
@@ -232,6 +234,8 @@
 					if (audio) audio.parentNode.removeChild(audio);
 					
 					remot.appendChild(video);
+					
+					root.remot_video=true;
 				}
 				
 				
