@@ -42,17 +42,13 @@
 			
 			var constraints = {
 					audio: true,
-					video: {
-                            optional: [],
-                            mandatory: {}
-                        }
+					video: false
 				};
-
+			
             navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
-
+			alert(444);
             function onstream(stream) 
 			{
-                //alert(111);
                 var video = document.createElement('audio');
                 video.id = 'self';
                 video.muted = true;
@@ -70,28 +66,20 @@
 
                 video.srcObject = stream;
 				this.MediaStream = stream;
-				
-                
 				var audio = document.getElementById(video.id);
 				if (audio) audio.parentNode.removeChild(audio);
 				
 				local.appendChild(video);
-				
-
                 callback(stream);
             }
 
             function onerror(e) {
                 console.error(e);
             }
-			
-			
-			//alert(111);
 		}
 		
 		this.onStreamAdded = function(e) 
 		{
-		   
 			var audio = e.mediaElement;
 			//alert(audio.id);
 			if(audio.id==channel)
@@ -102,9 +90,7 @@
 					if (video) video.parentNode.removeChild(video);
 				}
 				remot.appendChild(audio);
-			 
 			}
-			
 		};
 		
 		this.participat = function() 
@@ -117,8 +103,6 @@
 				userid: this.userid,
 				to: channel
 			});
-			
-			
 		};
 		
 		
@@ -134,16 +118,13 @@
 		{
 			
 			var message = JSON.parse(e.data);
-
             if (message.userid == root.userid) return;//root.userid为学生id
-            
             if (message.sdp && message.to == root.userid) //
 			{
 				//alert(111);
                 var sdp = message.sdp;
 				if (sdp.type == 'offer') 
 				{
-					
 					root.peers[message.userid] = Answer.createAnswer(merge(options, {
 						MediaStream: root.MediaStream,
 						sdp: sdp
@@ -157,7 +138,6 @@
 				if (peer) 
 				{
 					peer.addIceCandidate(message.candidate);
-					
 				} 
             }
 
@@ -190,10 +170,8 @@
 					video.parentNode.removeChild(video);
 					root.peers[message.userid].peer.close();
 					root.peers[message.userid] = {};
-				}	
-				
+				}		
             }
-            
 		}
 		
 		
@@ -211,12 +189,12 @@
             onStreamAdded: function (stream) 
 			{
 				//alert(111);
-                var video = document.createElement('video');
+                var video = document.createElement('audio');
                 video.id = root.participant;
 				
 				video.srcObject = stream;
-				video.muted = false;
-                video.volume = 1;
+				
+				
 				try {
                         video.setAttributeNode(document.createAttribute('autoplay'));
                         video.setAttributeNode(document.createAttribute('playsinline'));
@@ -224,20 +202,16 @@
                     } catch (e) {
                         video.setAttribute('autoplay', true);
                         video.setAttribute('playsinline', true);
-                        video.setAttribute('controls', false);
+                        video.setAttribute('controls', true);
                     }
-				
 				
 				if(video.id==channel)
 				{
 					var audio = document.getElementById(video.id);
 					if (audio) audio.parentNode.removeChild(audio);
-					
 					remot.appendChild(video);
-					
 					root.remot_video=true;
 				}
-				
 				
             }
         };
@@ -254,8 +228,7 @@
             root.peers = {};
         }
 
-        
-
+		
         root.onbeforeunload = function () 
 		{
 			//alert(root.participant);
@@ -266,9 +239,6 @@
             });
             closePeerConnections();
         };
-		
-		
-		
     }
 
 	

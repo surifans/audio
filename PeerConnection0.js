@@ -38,14 +38,14 @@
 			
 			var constraints = {
 					audio: true,
-					video: true
+					video: false
 				};
             navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
 
             function onstream(stream) 
 			{
                 //alert(111);
-                var video = document.createElement('video');
+                var video = document.createElement('audio');
                 video.id = 'self';
                 video.muted = true;
                 

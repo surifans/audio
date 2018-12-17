@@ -14,7 +14,7 @@
 			<div id="remote_media_stream">
 			</div>
 			<button onclick="start();" style="width:10vh;height:3vh">通话</button>
-			<!--button onclick="stop();" style="width:10vh;height:3vh">断开</button-->
+			
             <script>
 				var remot = document.getElementById('remote_media_stream');//返回指定ID元素
 				var local = document.getElementById('local_media_stream');
@@ -23,6 +23,14 @@
 				//alert(userid);
 				
 				var peer = new PeerConnection(channel,userid,local,remot);//在老师的远端建立的userid为11
+				
+				
+				
+				/*peer.getUserMedia(function(stream) {
+						peer.participat();
+						peer.addStream(stream);
+					});	*/
+				
 				
 				function start() 
 				{
@@ -35,13 +43,6 @@
 					
 				}
 				
-				function stop() 
-				{
-					//alert(111);
-					peer = new PeerConnection(channel,userid,local,remot);//在老师的远端建立的userid为11
-					
-					
-				}
             </script>
 
             
