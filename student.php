@@ -8,10 +8,12 @@
     </head>
 
     <body>
+			
 			<div id="local_media_stream">
 			</div>
 			<div id="remote_media_stream">
 			</div>
+			<button onclick="start();" style="width:10vh;height:3vh">通话</button>
 			
             <script>
 				var remot = document.getElementById('remote_media_stream');//返回指定ID元素

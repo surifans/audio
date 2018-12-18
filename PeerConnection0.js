@@ -10,10 +10,8 @@
 		
 		var pub = 'pub-f986077a-73bd-4c28-8e50-2e44076a84e0';
 		var sub = 'sub-b8f4c07a-352e-11e2-bb9d-c7df1d04ae4a';
-
 		WebSocket  = PUBNUB.ws;
 		var websocket = new WebSocket('wss://pubsub.pubnub.com/' + pub + '/' + sub + '/' + channel);	
-		
 		websocket.push = websocket.send;
 		websocket.send = function(data) {
 			websocket.push(JSON.stringify(data));
