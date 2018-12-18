@@ -4,14 +4,10 @@
 
 (function () {
 	
-    window.PeerConnection = function (channel, userid,local,remot) 
-	{
-		
+    window.PeerConnection = function (channel, userid,local,remot) {
         this.userid = userid ;
         this.peers = {};
 		this.participant = channel;
-		this.remot_video=false;//学生端需要创建好了remot端的video标签后，才能开启本地麦克风，然后跟老师对话
-		
 		
 		var pub = 'pub-f986077a-73bd-4c28-8e50-2e44076a84e0';
 		var sub = 'sub-b8f4c07a-352e-11e2-bb9d-c7df1d04ae4a';
@@ -23,13 +19,9 @@
 		};
 		
 		
-		var socket = websocket;
-		socket.send({         //初始化
-			userLeft: true,
-			userid: this.userid,  //当前学生id
-			to: channel	//应该为要对话的老师的id
-		});
 		
+		
+		var socket = websocket;
 		
         new Signaler(this, socket);
 		
@@ -40,46 +32,39 @@
 		this.getUserMedia = function(callback) 
 		{
 			
-			var constraints = {
-					audio: true,
-					video: false
-				};
-			
-            navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
-			alert(444);
-            function onstream(stream) 
+			var hints = {
+				audio: true,
+				video: {
+					optional: [],
+					mandatory: {}
+				}
+			};
+			navigator.getUserMedia(hints, function(stream) 
 			{
-                var video = document.createElement('audio');
-                video.id = 'self';
-                video.muted = true;
-                video.volume = 0;
-                
-                try {
-                        video.setAttributeNode(document.createAttribute('autoplay'));
-                        video.setAttributeNode(document.createAttribute('playsinline'));
-                        video.setAttributeNode(document.createAttribute('controls'));
-                    } catch (e) {
-                        video.setAttribute('autoplay', true);
-                        video.setAttribute('playsinline', true);
-                        video.setAttribute('controls', true);
-                    }
-
-                video.srcObject = stream;
-				this.MediaStream = stream;
-				var audio = document.getElementById(video.id);
-				if (audio) audio.parentNode.removeChild(audio);
+				//alert(local);
+				//
+				var video = document.createElement('audio');
+				video.src = URL.createObjectURL(stream);
+				video.controls = true;
+				video.muted = true;
+				video.id = 'self';
+				video.play();
+				video.autoplay = true;
+				//alert(222);
 				
-				local.appendChild(video);
-                callback(stream);
-            }
-
-            function onerror(e) {
-                console.error(e);
-            }
+				if (document.getElementById(video.id)) 
+				{
+					
+				}else{
+					local.appendChild(video);
+				}
+				callback(stream);
+			});
 		}
 		
 		this.onStreamAdded = function(e) 
 		{
+		   
 			var audio = e.mediaElement;
 			//alert(audio.id);
 			if(audio.id==channel)
@@ -90,20 +75,21 @@
 					if (video) video.parentNode.removeChild(video);
 				}
 				remot.appendChild(audio);
+			 
 			}
+			
 		};
 		
-		this.participat = function() 
+		this.sendParticipationRequest = function (userid) 
 		{
-			//var audio = document.getElementById(channel);
-			//if (audio) audio.parentNode.removeChild(audio);
-			
-			socket.send({
-				participationRequest: true,
-				userid: this.userid,
-				to: channel
-			});
-		};
+			//alert(userid);
+            socket.send({
+                participationRequest: true,
+                userid: this.userid,
+                to: userid
+            });
+        };
+		
 		
 		
     };
@@ -114,17 +100,27 @@
 		//var socket = socketURL;
 		socket.onmessage = onmessage;//接受消息
 		
+        var candidates = [];
+		
 		function onmessage(e) 
 		{
 			
 			var message = JSON.parse(e.data);
+
             if (message.userid == root.userid) return;//root.userid为学生id
-            if (message.sdp && message.to == root.userid) //
+            //root.participant = message.userid;
+
+            //alert(root.userid);
+			//alert(message.sdp);
+            
+            if (message.sdp && message.to == root.userid) // if someone shared SDP
 			{
 				//alert(111);
                 var sdp = message.sdp;
+				
 				if (sdp.type == 'offer') 
 				{
+					
 					root.peers[message.userid] = Answer.createAnswer(merge(options, {
 						MediaStream: root.MediaStream,
 						sdp: sdp
@@ -132,26 +128,29 @@
 				}
             }
 			
-            if (message.candidate && message.to == root.userid) //
+            if (message.candidate && message.to == root.userid) // if someone shared ICE
 			{
+				//alert(message.sdp);
+				//alert(candidates.length);
                 var peer = root.peers[message.userid];
 				if (peer) 
 				{
 					peer.addIceCandidate(message.candidate);
-				} 
+					for (var i = 0; i < candidates.length; i++) 
+					{
+						peer.addIceCandidate(candidates[i]);
+					}
+					candidates = [];
+				} else candidates.push(candidates);
             }
 
-            if (message.broadcasting) 
+            if (message.broadcasting && root.onUserFound ) 
 			{
-				if (document.getElementById(root.participant)) return;
-				socket.send({
-					participationRequest: true,
-					userid: root.userid,
-					to: root.participant
-				});
+				//alert(123);
+                root.onUserFound(message.userid);
             }
 			
-			if (message.userLeft && message.userid==root.participant) //  && message.to==root.userid
+			if (message.userLeft) 
 			{
                 var video = document.getElementById(message.userid);
 				if (video) 
@@ -159,19 +158,11 @@
 					video.parentNode.removeChild(video);
 					root.peers[message.userid].peer.close();
 					root.peers[message.userid] = {};
-				}	
+				}
+				
+				
             }
-			
-			if (message.re_connect && message.to==root.userid) //  && message.to==root.userid
-			{
-                var video = document.getElementById(message.userid);
-				if (video) 
-				{
-					video.parentNode.removeChild(video);
-					root.peers[message.userid].peer.close();
-					root.peers[message.userid] = {};
-				}		
-            }
+            
 		}
 		
 		
@@ -185,34 +176,37 @@
                     to: root.participant
                 });
             },
-            
+            onicecandidate: function (candidate) 
+			{
+                socket.send({
+                    userid: root.userid,
+                    candidate: candidate,
+                    to: root.participant
+                });
+            },
             onStreamAdded: function (stream) 
 			{
-				//alert(111);
-                var video = document.createElement('audio');
-                video.id = root.participant;
-				
-				video.srcObject = stream;
-				
-				
-				try {
-                        video.setAttributeNode(document.createAttribute('autoplay'));
-                        video.setAttributeNode(document.createAttribute('playsinline'));
-                        video.setAttributeNode(document.createAttribute('controls'));
-                    } catch (e) {
-                        video.setAttribute('autoplay', true);
-                        video.setAttribute('playsinline', true);
-                        video.setAttribute('controls', true);
-                    }
-				
-				if(video.id==channel)
+                
+                var mediaElement = document.createElement('audio');
+                mediaElement.id = root.participant;
+                mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.webkitURL.createObjectURL(stream);
+                mediaElement.autoplay = true;
+                mediaElement.controls = true;
+                mediaElement.play();
+
+                var streamObject = {
+                    mediaElement: mediaElement,
+                    stream: stream,
+                    userid: root.participant,
+                    type: 'remote'
+                };
+
+                if (root.onStreamAdded)
 				{
-					var audio = document.getElementById(video.id);
-					if (audio) audio.parentNode.removeChild(audio);
-					remot.appendChild(video);
-					root.remot_video=true;
+					//alert(111);
+					root.onStreamAdded(streamObject);
 				}
-				
+                    
             }
         };
 		
@@ -228,81 +222,28 @@
             root.peers = {};
         }
 
-		
-        root.onbeforeunload = function () 
-		{
+        
+
+        window.onbeforeunload = function () {
 			//alert(root.participant);
             socket.send({
                 userLeft: true,
                 userid: root.userid,  //当前学生id
                 to: root.participant	//应该为要对话的老师的id
             });
-            closePeerConnections();
+            //closePeerConnections();
         };
+		
+		
+		
     }
 
-	
-	var IceServersHandler = (function() 
-	{
-        function getIceServers(connection) {
-            var iceServers = [];
+    var RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+    var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
+    var RTCIceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
 
-            iceServers.push(getSTUNObj('stun:stun.l.google.com:19302'));
-
-            iceServers.push(getTURNObj('stun:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
-            iceServers.push(getTURNObj('turn:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
-            iceServers.push(getTURNObj('turn:webrtcweb.com:8877', 'muazkh', 'muazkh')); // coTURN
-
-            iceServers.push(getTURNObj('turns:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
-            iceServers.push(getTURNObj('turns:webrtcweb.com:8877', 'muazkh', 'muazkh')); // coTURN
-
-            // iceServers.push(getTURNObj('turn:webrtcweb.com:3344', 'muazkh', 'muazkh')); // resiprocate
-            // iceServers.push(getTURNObj('turn:webrtcweb.com:4433', 'muazkh', 'muazkh')); // resiprocate
-
-            // check if restund is still active: http://webrtcweb.com:4050/
-            iceServers.push(getTURNObj('stun:webrtcweb.com:4455', 'muazkh', 'muazkh')); // restund
-            iceServers.push(getTURNObj('turn:webrtcweb.com:4455', 'muazkh', 'muazkh')); // restund
-            iceServers.push(getTURNObj('turn:webrtcweb.com:5544?transport=tcp', 'muazkh', 'muazkh')); // restund
-
-            return iceServers;
-        }
-
-        function getSTUNObj(stunStr) {
-            var urlsParam = 'urls';
-            if (typeof isPluginRTC !== 'undefined') {
-                urlsParam = 'url';
-            }
-
-            var obj = {};
-            obj[urlsParam] = stunStr;
-            return obj;
-        }
-
-        function getTURNObj(turnStr, username, credential) {
-            var urlsParam = 'urls';
-            if (typeof isPluginRTC !== 'undefined') {
-                urlsParam = 'url';
-            }
-
-            var obj = {
-                username: username,
-                credential: credential
-            };
-            obj[urlsParam] = turnStr;
-            return obj;
-        }
-
-        return {
-            getIceServers: getIceServers
-        };
-    })();
-	
-    var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;//定义RTCPeerConnection类
-    var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
-    var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate;
-
-    navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
-    window.URL = window.URL || window.webkitURL;
+    navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+    window.URL = window.webkitURL || window.URL;
 
     var isFirefox = !!navigator.mozGetUserMedia;
     var isChrome = !!navigator.webkitGetUserMedia;
@@ -317,8 +258,7 @@
     };
 
     var iceServers = {
-        //iceServers: [STUN]
-		iceServers: IceServersHandler.getIceServers()
+        iceServers: [STUN]
     };
 
     if (isChrome) {
@@ -349,21 +289,27 @@
     
 	function onSdpError() {}
 
-	
+
+    // var answer = Answer.createAnswer(config);
+    // answer.setRemoteDescription(sdp);
+    // answer.addIceCandidate(candidate);
     var Answer = {
         createAnswer: function (config) 
 		{
-			
+			//alert(333);
             var peer = new RTCPeerConnection(iceServers, optionalArgument);
-			
+
             if (config.MediaStream) peer.addStream(config.MediaStream);
             peer.onaddstream = function (event) 
 			{
-				//alert(333);
+				
                 config.onStreamAdded(event.stream);
             };
 
-            
+            peer.onicecandidate = function (event) {
+                if (event.candidate)
+                    config.onicecandidate(event.candidate);
+            };
 
             peer.setRemoteDescription(new RTCSessionDescription(config.sdp));
             peer.createAnswer(function (sdp) {
@@ -390,6 +336,22 @@
         return mergein;
     }
 	
-	
+	window.URL = window.webkitURL || window.URL;
+	navigator.getMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+	navigator.getUserMedia = function(hints, onsuccess, onfailure) {
+		if(!hints) hints = {audio:true,video:true};
+		if(!onsuccess) throw 'Second argument is mandatory. navigator.getUserMedia(hints,onsuccess,onfailure)';
+		
+		navigator.getMedia(hints, _onsuccess, _onfailure);
+		
+		function _onsuccess(stream) {
+			onsuccess(stream);
+		}
+		
+		function _onfailure(e) {
+			if(onfailure) onfailure(e);
+			else throw Error('getUserMedia failed: ' + JSON.stringify(e, null, '\t'));
+		}
+	};
 	
 })();

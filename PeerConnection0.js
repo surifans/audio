@@ -4,94 +4,37 @@
 
 (function () {
 	
-    window.PeerConnection = function (channel, userid,local,remot) {
+    window.PeerConnection = function (socketURL, userid) {
         this.userid = userid ;
         this.peers = {};
 		
-		var pub = 'pub-f986077a-73bd-4c28-8e50-2e44076a84e0';
-		var sub = 'sub-b8f4c07a-352e-11e2-bb9d-c7df1d04ae4a';
-		WebSocket  = PUBNUB.ws;
-		var websocket = new WebSocket('wss://pubsub.pubnub.com/' + pub + '/' + sub + '/' + channel);	
-		websocket.push = websocket.send;
-		websocket.send = function(data) {
-			websocket.push(JSON.stringify(data));
-		};
-		
-		var socket = websocket;
-		socket.send({         //初始化
-			userLeft: true,
-			userid: channel,  //当前学生id
-			//to: channel	//应该为要对话的老师的id
-		});
-		
-		
-		
-        new Signaler(this, socket);
+        new Signaler(this, socketURL);
 		
 		this.addStream = function(stream) 
 		{	
 			this.MediaStream = stream;
 		};
-		
-		this.getUserMedia = function(callback) 
-		{
-			
-			var constraints = {
-					audio: true,
-					video: false
-				};
-            navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
-
-            function onstream(stream) 
-			{
-                //alert(111);
-                var video = document.createElement('audio');
-                video.id = 'self';
-                video.muted = true;
-                
-                video.volume = 1;
-				video.autoplay = true;
-                video.controls = true;
-
-                video.srcObject = stream;
-				this.MediaStream = stream;
-				
-				local.appendChild(video);
-
-                callback(stream);
-            }
-            function onerror(e) {
-                console.error(e);
-            }
-		}
-		
-		this.onStreamAdded = function(e) //这里是创建远端连接 
-		{
-			var audio = e.mediaElement;
-			
-			if (document.getElementById(audio.id)) 
-			{
-				
-				var video = document.getElementById(video.id);
-				if (video) video.parentNode.removeChild(video);
-			}
-			remot.appendChild(audio);
-		};
-		
     };
 
-    function Signaler(root, socket) 
-	{	
+    function Signaler(root, socketURL) 
+	{
+        var self = this;
+		var socket = socketURL;
 		socket.onmessage = onmessage;//接受消息
+		
 		root.startBroadcasting = function () //老师开始播音，一般是创建教室的人调用这个函数
 		{
+			
             (function transmit() 
 			{
                 socket.send({
                     userid: root.userid,
                     broadcasting: true
                 });
+				//alert(222);
+                //!self.participantFound &&!self.stopBroadcasting &&setTimeout(transmit, 1000);
 				setTimeout(transmit, 1000);//这里一直发送信号，让学生加入
+				
             })();
         };
 		
@@ -100,51 +43,36 @@
 		{
 			
 			var message = JSON.parse(e.data);
+			
+			
+			
             if (message.userid == root.userid) return;
             //alert(000);
 			
 			if (message.userLeft && message.to == root.userid) 
 			{
-				var video = document.getElementById(message.userid);
+				//alert(111);
+                var video = document.getElementById(message.userid);
 				if (video) 
 				{
 					video.parentNode.removeChild(video);
 					root.peers[message.userid].peer.close();
-					root.peers[message.userid]={};
+					root.peers[message.userid] = {};
 					
-					/*socket.send({         
-						userLeft: true,
-						userid: root.userid,  
-						//to: message.userid	
-					});*/
-					
-					return;
 				}	
-				
-				
-				if(root.peers[message.userid])
-				{
-					//for (var userid in root.peers) {
-					//	root.peers[userid].peer.close();
-					//}
-					//root.peers = {};
-					
-					//root.peers[message.userid].peer.close();
-					//root.peers[message.userid]={};
-					
-					//alert(root.peers[message.userid]);
-					//console.log(root.peers[message.userid]);
-					
-					/*socket.send({         
-						re_connect: true,
-						to: message.userid	
-					});*/
-				}
             }
-			
 			if (message.participationRequest && message.to == root.userid) // if someone sent participation request
 			{
-				
+				/*if(root.peers[message.userid])//先初始化一下
+				{
+					root.peers[message.userid].peer.close();
+					root.peers[message.userid] = {};
+				}
+				var video = document.getElementById(message.userid);
+				if (video) 
+				{
+					video.parentNode.removeChild(video);
+				}*/	
 				//alert(222);
 				root.participant = message.userid;
 				root.peers[message.userid] = Offer.createOffer(merge(options, 
@@ -162,9 +90,42 @@
 					root.peers[message.userid].setRemoteDescription(sdp);
 				}
             }
+			
+            if (message.candidate && message.to == root.userid) // if someone shared ICE
+			{
+				//alert(444);
+                var candidates = [];
+				var peer = root.peers[message.userid];
+				if (peer) 
+				{
+					peer.addIceCandidate(message.candidate);
+				} 
+				/*var peer = peers[message.userid];
+				if (!peer) {
+					var candidate = candidates[message.userid];
+					if (candidate) candidates[message.userid][candidate.length] = message.candidate;
+					else candidates[message.userid] = [message.candidate];
+				} else {
+					peer.addIceCandidate(message.candidate);
+
+					var _candidates = candidates[message.userid] || [];
+					if (_candidates.length) {
+						for (var i = 0; i < _candidates.length; i++) {
+							peer.addIceCandidate(_candidates[i]);
+						}
+						candidates[message.userid] = [];
+					}
+				}*/
+				
+            }
+		
+            
+			
+			
+            
 		}
 		
-        var options = 
+        var options = // it is passed over Offer/Answer objects for reusability
 		{
             onsdp: function (sdp) 
 			{
@@ -186,31 +147,42 @@
                 
 				
                 var mediaElement = document.createElement('audio');
-                mediaElement.id = root.participant;
-                
+				
 				var agent = navigator.userAgent.toLowerCase() ;//判断是否是谷歌浏览器
 				if (agent.indexOf("safari") > 0 && agent.indexOf("chrome") < 0) 
 				{
-					mediaElement.muted = true;
+					//audio['src'] = window.URL.createObjectURL(stream);
 				}
 				else{
 					mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.URL.createObjectURL(stream);
-					mediaElement.pause();
 				}
 				
-				mediaElement.autoplay = true;
+				
+                mediaElement.id = root.participant;
+                mediaElement[isFirefox ? 'mozSrcObject' : 'src'] = isFirefox ? stream : window.webkitURL.createObjectURL(stream);
+                mediaElement.autoplay = true;
                 mediaElement.controls = true;
 				mediaElement.srcObject = stream;
 				
-                var video = document.getElementById(mediaElement.id);
-				if (video) video.parentNode.removeChild(video);
+                mediaElement.play();
 				
-				remot.appendChild(mediaElement);
+                var streamObject = {
+                    mediaElement: mediaElement,
+                    stream: stream,
+                    userid: root.participant,
+                    type: 'remote'
+                };
+
+                if (root.onStreamAdded)
+				{
+					//alert(111);
+					root.onStreamAdded(streamObject);
+				}
             }
         };
 
         function closePeerConnections() {
-            
+            //self.stopBroadcasting = true;
             if (root.MediaStream) root.MediaStream.stop();
 
             for (var userid in root.peers) {
@@ -225,77 +197,27 @@
                 userid: root.userid,
                 //to: root.participant
             });
-            closePeerConnections();
+            //closePeerConnections();
         };
 
-        root.onbeforeunload = function () {
+        window.onbeforeunload = function () {
 			//alert(111);
             root.close();
         };
 		
+		
+		
+		
+		
+		
     }
 
-	var IceServersHandler = (function() 
-	{
-        function getIceServers(connection) {
-            var iceServers = [];
+    var RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+    var RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
+    var RTCIceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
 
-            iceServers.push(getSTUNObj('stun:stun.l.google.com:19302'));
-
-            iceServers.push(getTURNObj('stun:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
-            iceServers.push(getTURNObj('turn:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
-            iceServers.push(getTURNObj('turn:webrtcweb.com:8877', 'muazkh', 'muazkh')); // coTURN
-
-            iceServers.push(getTURNObj('turns:webrtcweb.com:7788', 'muazkh', 'muazkh')); // coTURN
-            iceServers.push(getTURNObj('turns:webrtcweb.com:8877', 'muazkh', 'muazkh')); // coTURN
-
-            // iceServers.push(getTURNObj('turn:webrtcweb.com:3344', 'muazkh', 'muazkh')); // resiprocate
-            // iceServers.push(getTURNObj('turn:webrtcweb.com:4433', 'muazkh', 'muazkh')); // resiprocate
-
-            // check if restund is still active: http://webrtcweb.com:4050/
-            iceServers.push(getTURNObj('stun:webrtcweb.com:4455', 'muazkh', 'muazkh')); // restund
-            iceServers.push(getTURNObj('turn:webrtcweb.com:4455', 'muazkh', 'muazkh')); // restund
-            iceServers.push(getTURNObj('turn:webrtcweb.com:5544?transport=tcp', 'muazkh', 'muazkh')); // restund
-
-            return iceServers;
-        }
-
-        function getSTUNObj(stunStr) {
-            var urlsParam = 'urls';
-            if (typeof isPluginRTC !== 'undefined') {
-                urlsParam = 'url';
-            }
-
-            var obj = {};
-            obj[urlsParam] = stunStr;
-            return obj;
-        }
-
-        function getTURNObj(turnStr, username, credential) {
-            var urlsParam = 'urls';
-            if (typeof isPluginRTC !== 'undefined') {
-                urlsParam = 'url';
-            }
-
-            var obj = {
-                username: username,
-                credential: credential
-            };
-            obj[urlsParam] = turnStr;
-            return obj;
-        }
-
-        return {
-            getIceServers: getIceServers
-        };
-    })();
-	
-    var RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;//定义RTCPeerConnection类
-    var RTCSessionDescription = window.RTCSessionDescription || window.mozRTCSessionDescription;
-    var RTCIceCandidate = window.RTCIceCandidate || window.mozRTCIceCandidate;
-
-    navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
-    window.URL = window.URL || window.webkitURL;
+    navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+    window.URL = window.webkitURL || window.URL;
 
     var isFirefox = !!navigator.mozGetUserMedia;
     var isChrome = !!navigator.webkitGetUserMedia;
@@ -310,7 +232,7 @@
     };
 
     var iceServers = {
-        iceServers: IceServersHandler.getIceServers()
+        iceServers: [STUN]
     };
 
     if (isChrome) {
@@ -346,12 +268,12 @@
 	{
         createOffer: function (config) 
 		{
-			//alert(111);
             var peer = new RTCPeerConnection(iceServers, optionalArgument);
 
             if (config.MediaStream) peer.addStream(config.MediaStream);
-            peer.onaddstream = function (event) //用于创建本地video
+            peer.onaddstream = function (event) 
 			{
+				//alert(111);
                 config.onStreamAdded(event.stream);
             };
 
@@ -373,7 +295,13 @@
 		{
             this.peer.setRemoteDescription(new RTCSessionDescription(sdp));
         },
-        
+        addIceCandidate: function (candidate) 
+		{
+            this.peer.addIceCandidate(new RTCIceCandidate({
+                sdpMLineIndex: candidate.sdpMLineIndex,
+                candidate: candidate.candidate
+            }));
+        }
     };
 	
 
@@ -384,6 +312,23 @@
         return mergein;
     }
 	
-	
+	window.URL = window.webkitURL || window.URL;
+	navigator.getMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+	navigator.getUserMedia = function(hints, onsuccess, onfailure) 
+	{
+		if(!hints) hints = {audio:true,video:true};
+		if(!onsuccess) throw 'Second argument is mandatory. navigator.getUserMedia(hints,onsuccess,onfailure)';
+		
+		navigator.getMedia(hints, _onsuccess, _onfailure);
+		
+		function _onsuccess(stream) {
+			onsuccess(stream);
+		}
+		
+		function _onfailure(e) {
+			if(onfailure) onfailure(e);
+			else throw Error('getUserMedia failed: ' + JSON.stringify(e, null, '\t'));
+		}
+	};
 	
 })();

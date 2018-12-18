@@ -8,40 +8,35 @@
     </head>
 
     <body>
-			
 			<div id="local_media_stream">
 			</div>
 			<div id="remote_media_stream">
 			</div>
-			<button onclick="start();" style="width:10vh;height:3vh">通话</button>
 			
             <script>
 				var remot = document.getElementById('remote_media_stream');//返回指定ID元素
 				var local = document.getElementById('local_media_stream');
-				var channel ='66';//这里应该设为老师的id，否则不能接通
-				var userid='11_';//+Math.floor(Math.random()*10000);
-				//alert(userid);
+                var channel ='66';//这里应该设为老师的id，否则不能接通
 				
-				var peer = new PeerConnection(channel,userid,local,remot);//在老师的远端建立的userid为11
+                var peer = new PeerConnection(channel,"s_11",local,remot);//在老师的远端建立的userid为11
 				
-				
-				
-				/*peer.getUserMedia(function(stream) {
-						peer.participat();
-						peer.addStream(stream);
-					});	*/
-				
-				
-				function start() 
+				//alert(peer);
+                peer.onUserFound = function(userid) 
 				{
-					//peer.onbeforeunload();
 					
-					peer.getUserMedia(function(stream) {
-						peer.participat();
-						peer.addStream(stream);
-					});
+					if(userid==channel)
+					{
+						
+						if (document.getElementById(userid)) return;
+						
+						peer.getUserMedia(function(stream) {
+							peer.addStream(stream);
+							peer.sendParticipationRequest(userid);
+						});
+						
+					}
 					
-				}
+				};
 				
             </script>
 
