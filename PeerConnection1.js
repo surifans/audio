@@ -80,17 +80,31 @@
 			
 		};
 		
-		this.sendParticipationRequest = function (userid) 
+		this.sendParticipationRequest = function () 
 		{
-			//alert(userid);
+			//alert(channel);
             socket.send({
                 participationRequest: true,
                 userid: this.userid,
-                to: userid
+                to: channel
             });
         };
 		
-		
+		/*this.onUserFound = function(message_userid) 
+		{
+			
+			if(message_userid==channel)
+			{
+				if (document.getElementById(message_userid)) return;
+				
+				this.getUserMedia(function(stream) {
+					this.addStream(stream);
+					this.sendParticipationRequest(message_userid);
+				});
+				
+			}
+			
+		};*/
 		
     };
 
@@ -108,11 +122,8 @@
 			var message = JSON.parse(e.data);
 
             if (message.userid == root.userid) return;//root.userid为学生id
-            //root.participant = message.userid;
-
-            //alert(root.userid);
-			//alert(message.sdp);
             
+			
             if (message.sdp && message.to == root.userid) // if someone shared SDP
 			{
 				//alert(111);
@@ -148,6 +159,7 @@
 			{
 				//alert(123);
                 root.onUserFound(message.userid);
+				
             }
 			
 			if (message.userLeft) 

@@ -17,25 +17,19 @@
 				var remot = document.getElementById('remote_media_stream');//返回指定ID元素
 				var local = document.getElementById('local_media_stream');
                 var channel ='66';//这里应该设为老师的id，否则不能接通
+				var userid = '11_';
+                var peer = new PeerConnection(channel,userid,local,remot);//在老师的远端建立的userid为11
 				
-                var peer = new PeerConnection(channel,"s_11",local,remot);//在老师的远端建立的userid为11
 				
 				//alert(peer);
-                peer.onUserFound = function(userid) 
+                peer.onUserFound = function(message_userid) 
 				{
+					if (document.getElementById(channel)) return;
 					
-					if(userid==channel)
-					{
-						
-						if (document.getElementById(userid)) return;
-						
-						peer.getUserMedia(function(stream) {
-							peer.addStream(stream);
-							peer.sendParticipationRequest(userid);
-						});
-						
-					}
-					
+					peer.getUserMedia(function(stream) {
+						peer.addStream(stream);
+						peer.sendParticipationRequest();
+					});
 				};
 				
             </script>
