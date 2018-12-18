@@ -21,18 +21,18 @@
                 var channel ='66';//这里应该设为老师的id，否则不能接通
 				var userid = '11_';
                 var peer = new PeerConnection(channel,userid,local,remot);//在老师的远端建立的userid为11
-				
-				
-				//alert(peer);
-                peer.onUserFound = function(message_userid) 
+				peer.getUserMedia(function(stream) {
+					peer.addStream(stream);
+				});
+				function start() 
 				{
-					if (document.getElementById(channel)) return;
-					
 					peer.getUserMedia(function(stream) {
 						peer.addStream(stream);
-						peer.sendParticipationRequest();
+						
 					});
-				};
+					
+				}
+				
 				
             </script>
 

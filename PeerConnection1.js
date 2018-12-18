@@ -36,12 +36,17 @@
 			
 			var constraints = {
 					audio: true,
-					video: false
+					video: {
+						optional: [],
+						mandatory: {}
+					}
 				};
-				
-			navigator.getUserMedia(constraints, function(stream) 
+			
+            navigator.mediaDevices.getUserMedia(constraints).then(onstream).catch(onerror);
+			//alert(444);
+            function onstream(stream) 
 			{
-				var video = document.createElement('audio');
+                var video = document.createElement('audio');
                 video.id = 'self';
                 video.muted = true;
                 video.volume = 0;
@@ -63,7 +68,11 @@
 				
 				local.appendChild(video);
                 callback(stream);
-			});
+            }
+
+            function onerror(e) {
+                console.error(e);
+            }
 		}
 		
 		this.onStreamAdded = function(e) 
@@ -128,19 +137,16 @@
 				if (peer) 
 				{
 					peer.addIceCandidate(message.candidate);
-					for (var i = 0; i < candidates.length; i++) 
-					{
-						peer.addIceCandidate(candidates[i]);
-					}
-					candidates = [];
-				} else candidates.push(candidates);
+				} 
             }
 
-            if (message.broadcasting && root.onUserFound ) 
+            
+            if (message.broadcasting ) 
 			{
 				//alert(123);
-                root.onUserFound(message.userid);
-				
+                //root.onUserFound(message.userid);
+				if (document.getElementById(root.participant)) return;
+				root.sendParticipationRequest();
             }
 			
 			if (message.userLeft) 
@@ -227,9 +233,9 @@
             root.peers = {};
         }
 
-        
-
-        window.onbeforeunload = function () {
+		
+        root.onbeforeunload = function () 
+		{
 			//alert(root.participant);
             socket.send({
                 userLeft: true,
@@ -389,22 +395,6 @@
         return mergein;
     }
 	
-	window.URL = window.webkitURL || window.URL;
-	navigator.getMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-	navigator.getUserMedia = function(hints, onsuccess, onfailure) {
-		if(!hints) hints = {audio:true,video:true};
-		if(!onsuccess) throw 'Second argument is mandatory. navigator.getUserMedia(hints,onsuccess,onfailure)';
-		
-		navigator.getMedia(hints, _onsuccess, _onfailure);
-		
-		function _onsuccess(stream) {
-			onsuccess(stream);
-		}
-		
-		function _onfailure(e) {
-			if(onfailure) onfailure(e);
-			else throw Error('getUserMedia failed: ' + JSON.stringify(e, null, '\t'));
-		}
-	};
+	
 	
 })();
