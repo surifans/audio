@@ -210,13 +210,13 @@
                         video.setAttribute('controls', true);
                     }
 				
-				if(video.id==channel)
-				{
+				//if(video.id==channel)
+				//{
 					var audio = document.getElementById(video.id);
 					if (audio) audio.parentNode.removeChild(audio);
 					remot.appendChild(video);
 					root.remot_video=true;
-				}
+				//}
 				
             }
         };
